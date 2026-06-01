@@ -1,0 +1,2999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Experience</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Genshin Impact DRIP FONT';
+            src: url('content/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT.ttf') format('truetype'),
+                 url('content/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'HYWenHei-85W';
+            src: url('content/hywenhei/zhcn.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'HYWenHei-85W', 'Inter', sans-serif;
+            user-select: none;
+            /* Custom Genshin cursor */
+            cursor: url('content/cursor/genshin_cursor.cur'), auto;
+        }
+        a, button, [role="button"], .contact-card, .genshin-card, .nav-links a, .award-item, .timeline-card {
+            cursor: url('content/cursor/genshin_link.cur'), pointer;
+        }
+        
+        h1, h2, h3, .section-title, .hero-title, .hero-subtitle, .award-title, .timeline-title, .card-title, .player-title {
+            font-family: 'HYWenHei-85W', sans-serif;
+            font-weight: normal;
+        }
+        .hero-name, .nav-name {
+            font-family: 'Genshin Impact DRIP FONT', sans-serif;
+            font-weight: normal;
+        }
+
+        #white-flash {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #fff;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease-in-out;
+        }
+        #white-flash.active { opacity: 1; }
+
+        .scene {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.8s ease;
+            z-index: 10;
+        }
+        .scene.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 20;
+        }
+
+        /* =====================================================
+           AMBIENT BACKGROUND - lấp đầy black bars
+        ====================================================== */
+        .ambient-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            overflow: hidden;
+        }
+        .ambient-bg video {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            filter: blur(30px) brightness(0.35);
+            transform: scale(1.1);
+        }
+
+        /* =====================================================
+           VIDEO CHÍNH - width 90vw, giữ tỉ lệ gốc
+        ====================================================== */
+        .video-wrapper {
+            position: relative;
+            z-index: 2;
+            width: 90vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: width 0.3s ease;
+        }
+        .video-wrapper > video.main-vid {
+            width: 90vw;
+            height: auto;
+            display: block;
+            transition: width 0.3s ease;
+        }
+        
+        /* Khi nhấn F11 (Fullscreen), mở rộng video lên tối đa nhưng không bị viền đen */
+        @media (display-mode: fullscreen) {
+            .video-wrapper { 
+                width: 100vw; 
+                height: 100vh; 
+            }
+            .video-wrapper > video.main-vid { 
+                width: auto; 
+                height: auto;
+                max-width: 100vw;
+                max-height: 100vh;
+                object-fit: fill; /* Reset object-fit */
+                background: transparent;
+            }
+        }
+
+        #intro-vid { image-rendering: pixelated; }
+
+        /* =====================================================
+           HIỆU ỨNG "KHUNG HÌNH ĐÔNG CỨNG" - Frozen Frame FX
+           Áp dụng khi intro kết thúc và video đứng yên
+        ====================================================== */
+
+        /* 1. VIGNETTE - bóng tối ở viền, tạo chiều sâu */
+        #vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 25;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            background: radial-gradient(
+                ellipse at center,
+                transparent 50%,
+                rgba(0, 0, 0, 0.65) 100%
+            );
+        }
+        #vignette.visible { opacity: 1; }
+
+        /* 2. FLOATING PARTICLES - hạt bụi lấp lánh bay lên */
+        #particles-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 26;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+        #particles-canvas.visible { opacity: 1; }
+
+        /* 5. BREATHING GLOW - ánh sáng xanh xung quanh video thở nhịp nhàng */
+        .video-wrapper.frozen::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 4px;
+            background: transparent;
+            box-shadow: 0 0 0px 0px rgba(0, 200, 255, 0);
+            animation: breathe 3s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 3;
+        }
+        @keyframes breathe {
+            0%, 100% { box-shadow: 0 0 20px 4px rgba(0, 200, 255, 0.08); }
+            50%       { box-shadow: 0 0 50px 12px rgba(0, 200, 255, 0.22); }
+        }
+
+        /* =====================================================
+           SCENE WEB CHÍNH
+        ====================================================== */
+        #main-scene .ambient-bg video {
+            filter: blur(25px) brightness(0.4);
+        }
+        #main-bg-vid-wrapper {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2;
+            overflow: hidden;
+        }
+        #main-bg-vid {
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+        /* Lớp phủ mỏng 17% để chữ dễ đọc */
+        .main-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.17);
+            z-index: 3;
+        }
+        .content-container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            color: white;
+            max-width: 800px;
+            padding: 2rem;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ╔══════════════════════════════════════════════════════╗
+           ║       MONDSTADT PORTFOLIO DESIGN SYSTEM              ║
+           ╚══════════════════════════════════════════════════════╝ */
+
+        /* CSS VARIABLES - Genshin Color Palette */
+        :root {
+            --gold-bright:  #F5E0AB;
+            --gold-dark:    #C2A56C;
+            --gold-deep:    #8B7340;
+            --anemo:        #55E5B9;
+            --anemo-light:  #8AFFE0;
+            --anemo-glow:   rgba(85, 229, 185, 0.4);
+            --cream:        rgba(246, 244, 221, 0.08);
+            --panel-bg:     rgba(8, 12, 22, 0.85);
+            --panel-border: rgba(245, 224, 171, 0.6);
+            --text-bright:  #FFFFFF;
+            --text-muted:   #C8C4B9;
+        }
+
+        /* ROOT CONTAINER - scrollable over the bg video */
+        .portfolio-root {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 10;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            padding-bottom: 60px;
+        }
+        .portfolio-root::-webkit-scrollbar { width: 6px; }
+        .portfolio-root::-webkit-scrollbar-track { background: transparent; }
+        .portfolio-root::-webkit-scrollbar-thumb {
+            background: var(--gold-dark);
+            border-radius: 3px;
+        }
+
+        /* ── NAVIGATION ─────────────────────────────────────── */
+        .genshin-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 48px;
+            background: rgba(8, 12, 22, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--panel-border);
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--gold-bright);
+            letter-spacing: 1px;
+        }
+        .nav-links {
+            list-style: none;
+            margin: 0; padding: 0;
+            display: flex;
+            gap: 28px;
+        }
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.82rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            transition: color 0.25s;
+        }
+        .nav-links a:hover { color: var(--anemo-light); }
+
+        /* ── ANEMO SIGIL DECORATION ─────────────────────────── */
+        .anemo-sigil {
+            color: var(--anemo);
+            font-size: 1.8rem;
+            display: inline-block;
+            animation: sigil-spin 12s linear infinite;
+        }
+        .anemo-sigil.large {
+            font-size: 3rem;
+        }
+        @keyframes sigil-spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        /* ── HERO SECTION ───────────────────────────────────── */
+        .hero-section {
+            position: relative;
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 24px;
+            overflow: hidden;
+        }
+        /* Corner decorations - gothic arch corners */
+        .hero-decor {
+            position: absolute;
+            width: 80px; height: 80px;
+            border-color: var(--gold-dark);
+            border-style: solid;
+            opacity: 0.6;
+        }
+        .hero-decor.top-left    { top: 24px; left: 24px; border-width: 2px 0 0 2px; }
+        .hero-decor.top-right   { top: 24px; right: 24px; border-width: 2px 2px 0 0; }
+        .hero-decor.bottom-left { bottom: 24px; left: 24px; border-width: 0 0 2px 2px; }
+        .hero-decor.bottom-right{ bottom: 24px; right: 24px; border-width: 0 2px 2px 0; }
+
+        .hero-inner {
+            text-align: center;
+            max-width: 720px;
+            animation: fadeInUp 1.2s ease-out;
+        }
+        .hero-badge {
+            width: 180px; height: 180px;
+            margin: 0 auto 28px;
+            border-radius: 50%;
+            border: 3px solid var(--gold-dark);
+            outline: 1px solid rgba(211,188,142,0.25);
+            outline-offset: 6px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 40px var(--anemo-glow), 0 0 80px rgba(211,188,142,0.15);
+            flex-shrink: 0;
+        }
+        .hero-badge img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            object-position: center top;
+            display: block;
+            transition: transform 0.5s ease;
+        }
+        .hero-badge:hover img { transform: scale(1.06); }
+        /* Gold shimmer ring animation */
+        .hero-badge::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            background: conic-gradient(from 0deg, transparent, var(--gold-bright), transparent) border-box;
+            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: destination-out;
+            mask-composite: exclude;
+            animation: ring-spin 4s linear infinite;
+        }
+        @keyframes ring-spin { to { transform: rotate(360deg); } }
+        .hero-name {
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 900;
+            color: var(--gold-bright);
+            letter-spacing: 4px;
+            margin: 0 0 10px;
+            text-shadow: 0 2px 20px rgba(211,188,142,0.4);
+        }
+        .hero-title {
+            color: var(--anemo-light);
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            margin: 0 0 28px;
+        }
+        /* Ornamental divider */
+        .hero-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .divider-line {
+            width: 120px;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--gold-dark), transparent);
+        }
+        .divider-gem {
+            width: 8px; height: 8px;
+            background: var(--gold-bright);
+            transform: rotate(45deg);
+            box-shadow: 0 0 8px var(--gold-bright);
+        }
+        .hero-quote {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.8;
+            font-style: italic;
+            margin-bottom: 28px;
+            padding: 16px 24px;
+            border-left: 2px solid var(--gold-dark);
+            border-right: 2px solid var(--gold-dark);
+            background: var(--cream);
+            border-radius: 4px;
+        }
+        .hero-tags { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .tag {
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .tag.anemo {
+            background: rgba(78, 201, 160, 0.15);
+            border: 1px solid var(--anemo);
+            color: var(--anemo-light);
+        }
+        .tag.gold {
+            background: rgba(211, 188, 142, 0.1);
+            border: 1px solid var(--gold-dark);
+            color: var(--gold-bright);
+        }
+
+        /* ── SECTIONS ───────────────────────────────────────── */
+        .section {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 60px 24px;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+        .section-header.left { justify-content: flex-start; margin-bottom: 20px; }
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--gold-bright);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin: 0;
+        }
+        .section-title.small { font-size: 1rem; }
+        .section-gem {
+            width: 10px; height: 10px;
+            background: linear-gradient(135deg, var(--gold-bright), var(--gold-deep));
+            transform: rotate(45deg);
+            flex-shrink: 0;
+            box-shadow: 0 0 10px rgba(211,188,142,0.5);
+        }
+        .section-gem.small { width: 7px; height: 7px; }
+
+        /* ── GENSHIN CARD ───────────────────────────────────── */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+        .genshin-card {
+            position: relative;
+            background: linear-gradient(135deg, rgba(20, 30, 50, 0.8), rgba(10, 15, 25, 0.9));
+            border: 2px solid var(--panel-border);
+            border-radius: 6px;
+            padding: 24px;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(245, 224, 171, 0.15);
+        }
+        /* Gold shimmer top line */
+        .genshin-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--gold-bright), transparent);
+        }
+        .genshin-card.highlight::before {
+            background: linear-gradient(to right, transparent, var(--anemo), transparent);
+        }
+        .genshin-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--gold-bright);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 20px var(--anemo-glow), 0 8px 30px rgba(245, 224, 171, 0.25);
+        }
+        .card-icon { font-size: 1.8rem; margin-bottom: 12px; }
+        .card-title {
+            color: var(--gold-bright);
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0 0 8px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 8px rgba(245, 224, 171, 0.4);
+        }
+        .card-org {
+            color: var(--anemo);
+            font-size: 0.82rem;
+            margin: 0 0 6px;
+        }
+        .card-desc {
+            color: var(--text-muted);
+            font-size: 0.84rem;
+            line-height: 1.7;
+            margin: 0;
+        }
+        .card-footer { margin-top: 16px; }
+        .skill-bar {
+            display: block;
+            height: 4px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .skill-fill {
+            display: block;
+            height: 100%;
+            background: linear-gradient(to right, var(--anemo), var(--anemo-light));
+            border-radius: 2px;
+            animation: skill-grow 1.5s ease-out forwards;
+            transform-origin: left;
+        }
+        @keyframes skill-grow {
+            from { width: 0 !important; }
+        }
+        .achievement-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .pill {
+            padding: 4px 14px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .pill.gold {
+            background: rgba(211,188,142,0.15);
+            border: 1px solid var(--gold-dark);
+            color: var(--gold-bright);
+        }
+        .pill.anemo {
+            background: rgba(78,201,160,0.12);
+            border: 1px solid var(--anemo);
+            color: var(--anemo-light);
+        }
+
+        /* ── TIMELINE ───────────────────────────────────────── */
+        .timeline { position: relative; padding-left: 40px; }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 12px; top: 0; bottom: 0;
+            width: 1px;
+            background: linear-gradient(to bottom, var(--gold-dark), transparent);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 28px;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -34px;
+            top: 18px;
+            width: 12px; height: 12px;
+            background: var(--gold-bright);
+            border-radius: 50%;
+            box-shadow: 0 0 12px rgba(211,188,142,0.8);
+        }
+        .timeline-card {
+            background: linear-gradient(135deg, rgba(20, 30, 50, 0.8), rgba(10, 15, 25, 0.9));
+            border: 2px solid var(--panel-border);
+            border-radius: 6px;
+            padding: 20px 24px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 20px rgba(245, 224, 171, 0.15);
+        }
+        .timeline-card:hover { 
+            border-color: var(--gold-bright); 
+            box-shadow: 0 8px 30px rgba(245, 224, 171, 0.25);
+        }
+        .tl-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .tl-title {
+            color: var(--gold-bright);
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 0 0 8px rgba(245, 224, 171, 0.4);
+        }
+        .tl-date {
+            color: var(--anemo);
+            font-size: 0.78rem;
+            letter-spacing: 1px;
+        }
+        .tl-org {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            margin: 0 0 8px;
+            font-style: italic;
+        }
+        .tl-desc {
+            color: var(--text-muted);
+            font-size: 0.84rem;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* ── EDU & AWARDS GRID ──────────────────────────────── */
+        .edu-awards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 40px;
+            align-items: start;
+        }
+        @media (max-width: 680px) { .edu-awards-grid { grid-template-columns: 1fr; } }
+        .awards-list { display: flex; flex-direction: column; gap: 14px; }
+        .award-item {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 6px;
+            padding: 14px 18px;
+            transition: border-color 0.3s;
+        }
+        .award-item.cert { border-color: rgba(78,201,160,0.35); }
+        .award-item:hover { border-color: var(--gold-bright); }
+        .award-icon { font-size: 1.4rem; flex-shrink: 0; }
+        .award-title {
+            color: var(--text-bright);
+            font-size: 0.86rem;
+            font-weight: 600;
+            margin: 0 0 4px;
+            line-height: 1.4;
+        }
+        .award-date {
+            color: var(--anemo);
+            font-size: 0.76rem;
+            margin: 0;
+        }
+
+        /* ── CONTACT ────────────────────────────────────────── */
+        .contact-section { padding-bottom: 40px; }
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .contact-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 24px 16px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 6px;
+            text-decoration: none;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+        }
+        .contact-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--anemo);
+            box-shadow: 0 8px 30px var(--anemo-glow);
+        }
+        .contact-icon { font-size: 1.6rem; }
+        .contact-label {
+            color: var(--text-bright);
+            font-size: 0.82rem;
+            text-align: center;
+            word-break: break-all;
+        }
+
+        /* ── UI ELEMENTS ──────────────────────────────────────── */
+        /* ── MUSIC PLAYER SYSTEM ──────────────────────────────── */
+        .music-system {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .music-btn {
+            background: transparent;
+            border: 1px solid var(--gold-bright);
+            color: var(--gold-bright);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            cursor: url('content/cursor/genshin_link.cur'), pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            margin-right: 0;
+            padding: 0;
+            z-index: 102; /* Luôn nổi trên cùng */
+        }
+        .music-btn:hover {
+            color: var(--anemo-light);
+            transform: scale(1.1);
+            opacity: 1;
+        }
+        
+        /* Cửa sổ thả xuống chứa mọi thứ */
+        .music-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 16px;
+            width: 380px;
+            background: rgba(8, 12, 22, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--gold-dark);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 10px rgba(78, 201, 160, 0.2);
+            z-index: 101;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
+        }
+        .music-dropdown.hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+            visibility: hidden;
+            pointer-events: none;
+        }
+        
+        /* Danh sách bài hát (Mở rộng/Thu gọn) */
+        .tracklist-container {
+            max-height: 0; /* Mặc định đóng */
+            overflow-y: auto;
+            transition: max-height 0.4s ease;
+            border-bottom: 0px solid var(--panel-border);
+        }
+        .tracklist-container.open {
+            max-height: 180px; /* Hiển thị tầm 4 bài (~45px/bài) */
+            border-bottom: 1px solid var(--panel-border);
+        }
+        .tracklist-container::-webkit-scrollbar { width: 4px; }
+        .tracklist-container::-webkit-scrollbar-track { background: transparent; }
+        .tracklist-container::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 2px; }
+        
+        .track-list {
+            list-style: none;
+            margin: 0; padding: 0;
+        }
+        .track-item {
+            padding: 12px 16px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: url('content/cursor/genshin_link.cur'), pointer;
+            transition: background 0.2s, color 0.2s;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+        }
+        .track-item:last-child { border-bottom: none; }
+        .track-item:hover { background: rgba(78, 201, 160, 0.1); color: var(--text-bright); }
+        .track-item.active {
+            color: var(--anemo-light);
+            font-weight: bold;
+            background: rgba(78, 201, 160, 0.15);
+        }
+        .track-item.active::before {
+            content: '▶';
+            font-size: 0.7rem;
+            margin-right: 8px;
+            color: var(--anemo-light);
+        }
+
+        /* Khung điều khiển (Luôn hiển thị) */
+        .media-player {
+            position: relative;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.4);
+        }
+        .btn-hide-player {
+            background: transparent;
+            border: none;
+            color: #ff5555;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, transform 0.2s;
+        }
+        .btn-hide-player:hover {
+            color: #ff2222;
+            transform: scale(1.1);
+        }
+        .btn-tracklist-menu {
+            background: transparent;
+            border: none;
+            color: var(--gold-bright);
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, transform 0.2s;
+        }
+        .btn-tracklist-menu:hover {
+            color: var(--text-bright);
+            transform: scale(1.1);
+        }
+        .player-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .player-title {
+            color: var(--gold-bright);
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 170px;
+        }
+        .player-time {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        /* Thanh progress bar */
+        .player-progress {
+            margin-bottom: 14px;
+        }
+        .player-progress input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+            cursor: url('content/cursor/genshin_link.cur'), pointer;
+        }
+        .player-progress input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+        }
+        .player-progress input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background: var(--anemo-light);
+            margin-top: -4px;
+            box-shadow: 0 0 5px var(--anemo);
+        }
+        
+        /* Các nút chức năng */
+        .player-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+        }
+        .control-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-bright);
+            cursor: url('content/cursor/genshin_link.cur'), pointer;
+            transition: color 0.2s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+        .control-btn:hover { color: var(--gold-light); transform: scale(1.1); }
+        .control-btn.active { color: var(--anemo-light); }
+        
+        #btn-play-pause svg { width: 22px; height: 22px; color: var(--gold-bright); }
+        #btn-play-pause:hover svg { color: var(--gold-light); }
+
+        /* Màng mờ nền web (Dark & Blur) */
+        .music-backdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(8px);
+            z-index: 95; /* Dưới nav(100) nhưng trên main content(20) */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        .music-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ── QUEST MODAL ──────────────────────────────────────── */
+        .unlock-modal {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(8, 12, 22, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--gold-dark);
+            border-radius: 8px;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.8), 0 0 15px rgba(211, 188, 141, 0.3);
+            padding: 30px;
+            z-index: 200;
+            text-align: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            max-width: 400px;
+        }
+        .unlock-modal.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .unlock-modal h3 {
+            color: var(--gold-bright);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        .unlock-modal p {
+            color: var(--text-bright);
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .unlock-modal-btn {
+            background: rgba(78, 201, 160, 0.2);
+            border: 1px solid var(--anemo);
+            color: var(--anemo-light);
+            padding: 8px 24px;
+            border-radius: 4px;
+            cursor: url('content/cursor/genshin_link.cur'), pointer;
+            transition: all 0.2s ease;
+            font-weight: bold;
+        }
+        .unlock-modal-btn:hover {
+            background: rgba(78, 201, 160, 0.4);
+            color: #fff;
+        }
+        
+        /* ── QUEST TOAST ──────────────────────────────────────── */
+        .quest-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translate(-50%, -20px);
+            background: rgba(78, 201, 160, 0.9);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(78, 201, 160, 0.4);
+            z-index: 300;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .quest-toast.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, 0);
+        }
+        
+        .track-locked {
+            color: rgba(255, 255, 255, 0.3) !important;
+        }
+        .track-locked:hover {
+            background: transparent !important;
+            color: rgba(255, 255, 255, 0.4) !important;
+        }
+        .lock-icon {
+            margin-left: auto;
+            color: rgba(255,255,255,0.4);
+        }
+
+        /* ── RESEARCH SLIDE-UP CURTAIN ──────────────────────── */
+        .research-card {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            height: 320px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            margin-bottom: 0;
+            text-align: center;
+        }
+        .research-curtain {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 25, 40, 0.98);
+            border-top: 2px solid var(--gold-bright);
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 2;
+        }
+        .research-card:hover .research-curtain {
+            transform: translateY(0);
+        }
+        .abstract-content {
+            flex-grow: 1;
+            overflow: hidden;
+            text-align: left;
+            width: 100%;
+        }
+        .abstract-text {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #e0e0e0;
+            display: -webkit-box;
+            -webkit-line-clamp: 12;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-align: justify;
+        }
+
+        /* ── PAIMON GUIDE COMPANION ─────────────────────────── */
+        .paimon-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .paimon-container.hidden {
+            opacity: 0;
+            transform: translateY(50px);
+            pointer-events: none;
+        }
+        .paimon-avatar {
+            width: 140px;
+            height: auto;
+            cursor: pointer;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 4px 10px rgba(78, 201, 160, 0.4));
+            transition: transform 0.2s, filter 0.2s;
+        }
+        .paimon-avatar:hover {
+            transform: scale(1.1);
+            filter: drop-shadow(0 4px 15px rgba(245, 224, 171, 0.6));
+        }
+        @keyframes paimon-jump {
+            0% { transform: scale(1.1) translateY(0); }
+            30% { transform: scale(0.9, 1.2) translateY(-40px); }
+            50% { transform: scale(1.1, 0.9) translateY(0); }
+            70% { transform: scale(0.95, 1.1) translateY(-15px); }
+            100% { transform: scale(1.1) translateY(0); }
+        }
+        .paimon-avatar.jump {
+            animation: paimon-jump 0.5s ease-in-out;
+        }
+        .paimon-toggle-btn {
+            background: transparent;
+            border: 1px solid var(--gold-bright);
+            color: var(--gold-bright);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 10px;
+        }
+        .paimon-toggle-btn:hover {
+            background: var(--gold-bright);
+            color: #1a1a2e;
+            transform: scale(1.1);
+        }
+        .paimon-dialog {
+            position: relative;
+            z-index: 9999;
+            background: rgba(20, 30, 50, 0.95);
+            border: 2px solid var(--gold-bright);
+            padding: 15px 20px;
+            border-radius: 12px;
+            color: var(--text-bright);
+            font-size: 0.9rem;
+            max-width: 250px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            transition: opacity 0.3s, transform 0.3s;
+            transform-origin: top right;
+            margin-top: -30px;
+        }
+        .paimon-dialog.hidden {
+            opacity: 0;
+            transform: scale(0.8);
+            pointer-events: none;
+        }
+        /* Tam giác chỉ vào Paimon */
+        .paimon-dialog::after {
+            content: '';
+            position: absolute;
+            top: 60px;
+            right: -12px;
+            border-width: 10px 0 10px 12px;
+            border-style: solid;
+            border-color: transparent transparent transparent var(--gold-bright);
+        }
+        .paimon-close {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+        }
+        .paimon-close:hover { color: #ff5555; }
+        .paimon-btn {
+            margin-top: 12px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-family: var(--font-main);
+            width: 100%;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* ── FOOTER ─────────────────────────────────────────── */
+        .genshin-footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            border-top: 1px solid var(--panel-border);
+        }
+
+        /* ── DANDELION EFFECT ────────────────────────────────── */
+        #dandelion-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 5;
+        }
+        .dandelion-seed {
+            position: absolute;
+            top: -50px;
+            width: 4px;
+            height: 4px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px 2px rgba(168, 255, 230, 0.8);
+            animation: dandelion-fall linear infinite;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .dandelion-seed::after {
+            content: '';
+            position: absolute;
+            bottom: 4px; left: 50%;
+            width: 1px; height: 10px;
+            background: linear-gradient(to top, rgba(255,255,255,0.9), transparent);
+            transform: translateX(-50%);
+        }
+        .dandelion-seed::before {
+            content: '';
+            position: absolute;
+            bottom: 12px; left: 50%;
+            width: 16px; height: 12px;
+            background: radial-gradient(ellipse at bottom, rgba(255,255,255,0.6) 0%, transparent 70%);
+            transform: translateX(-50%);
+            border-radius: 50% 50% 0 0;
+        }
+        @keyframes dandelion-fall {
+            0% { transform: scale(var(--scale)) translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 0.8; }
+            100% { transform: scale(var(--scale)) translateY(110vh) translateX(calc(200px * var(--drift))) rotate(calc(90deg * var(--drift))); opacity: 0; }
+        }
+
+        /* ── TUTORIAL ──────────────────────────────────── */
+        .tutorial-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9998;
+            transition: opacity 0.3s ease;
+        }
+        .tutorial-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .local-tutorial-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9998;
+            pointer-events: none;
+            border-radius: inherit;
+        }
+        .tutorial-parent-elevate {
+            z-index: 9999 !important;
+        }
+                .tutorial-highlight {
+            position: relative;
+            z-index: 9999 !important;
+            animation: tutorial-pulse 1.2s infinite;
+            border-radius: 8px;
+            background: rgba(230, 194, 117, 0.2);
+            border: 1px solid rgba(230, 194, 117, 0.8);
+        }
+        @keyframes tutorial-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(230, 194, 117, 0.9), 0 0 15px rgba(230, 194, 117, 0.9); }
+            50% { box-shadow: 0 0 0 12px rgba(230, 194, 117, 0), 0 0 30px rgba(230, 194, 117, 0.5); }
+            100% { box-shadow: 0 0 0 0 rgba(230, 194, 117, 0), 0 0 15px rgba(230, 194, 117, 0.9); }
+        }
+
+        /* Certificate Modal */
+        .cert-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .cert-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .cert-modal img {
+            max-width: 90%;
+            max-height: 90vh;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .cert-modal.active img {
+            transform: scale(1);
+        }
+        .cert-modal img {
+            cursor: zoom-in;
+        }
+        .cert-modal.active img.zoomed {
+            transform: scale(2.5);
+            cursor: zoom-out;
+        }
+        .cert-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            transition: color 0.3s;
+        }
+        .cert-modal-close:hover {
+            color: #ff5555;
+        }
+        .award-item.cert {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .award-item.cert:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+            background: rgba(230, 194, 117, 0.1);
+        }
+        .award-item.cert::after {
+            content: "👁 View";
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            color: var(--gold-bright);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .award-item.cert:hover::after {
+            opacity: 1;
+        }
+        /* =====================================================
+           MOBILE RESPONSIVENESS
+        ====================================================== */
+        @media (max-width: 768px) {
+            /* Navigation */
+            .genshin-nav {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 12px 20px;
+                gap: 12px;
+            }
+            .nav-logo {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            .nav-links {
+                width: 100%;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+                gap: 20px;
+                padding-bottom: 5px;
+            }
+            .nav-links::-webkit-scrollbar {
+                display: none;
+            }
+
+            /* Typography */
+            .hero-title {
+                font-size: 2.2rem;
+                letter-spacing: 2px;
+            }
+            .hero-subtitle {
+                font-size: 0.9rem;
+            }
+            .section-title {
+                font-size: 1.8rem;
+            }
+            .section-title.small {
+                font-size: 1.5rem;
+            }
+            
+            /* Layout & Padding */
+            .content-container {
+                padding: 1rem;
+            }
+            .hero-content {
+                padding: 30px;
+            }
+            .hero-quote {
+                font-size: 0.95rem;
+            }
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+            /* Start Screen Mobile */
+            .start-title {
+                font-size: 1.5rem !important;
+                letter-spacing: 2px !important;
+            }
+            .start-prompt {
+                font-size: 0.85rem !important;
+            }
+            .start-content .anemo-sigil {
+                font-size: 2.2rem !important;
+                margin-bottom: 10px !important;
+            }
+            
+            /* Paimon Mobile tweaks */
+            .paimon-avatar { width: 80px; }
+            .paimon-dialog { width: 200px; padding: 10px; }
+            .paimon-dialog p { font-size: 0.8rem; }
+
+            .edu-awards-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            /* Timeline */
+            .timeline-item {
+                gap: 12px;
+            }
+            .tl-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            
+            /* Paimon */
+            .paimon-container {
+                bottom: 15px;
+                right: 15px;
+                flex-direction: column-reverse;
+                align-items: flex-end;
+                gap: 10px;
+            }
+            .paimon-avatar {
+                width: 100px;
+            }
+            .paimon-dialog {
+                width: 240px;
+            }
+            .paimon-dialog p {
+                font-size: 0.85rem;
+            }
+            .paimon-btn {
+                padding: 4px 12px;
+                font-size: 0.8rem;
+            }
+        }
+
+    
+        /* START SCREEN */
+                .start-screen {
+            position: fixed;
+            inset: 0;
+            background: #080c16;
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s, visibility 1s;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .start-bg-img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 100%;
+            min-height: 100%;
+            object-fit: cover;
+            filter: blur(8px);
+            z-index: 1;
+            opacity: 0.6;
+        }
+        .start-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(8, 12, 22, 0.4);
+            z-index: 2;
+        }
+        .start-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .start-content {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+            animation: pulse-start 2s infinite;
+        }
+        .start-title {
+            font-family: var(--font-title);
+            color: var(--gold-bright);
+            font-size: 2rem;
+            letter-spacing: 4px;
+            margin: 0 0 10px;
+        }
+        .start-prompt {
+            color: var(--text-muted);
+            font-size: 1rem;
+            letter-spacing: 2px;
+        }
+        @keyframes pulse-start {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+    </style>
+</head>
+<body>
+    <!-- START SCREEN -->
+    <div id="start-screen" class="start-screen">
+        <img class="start-bg-img" src="intro/waitingscreenbg.jpg" alt="Waiting Screen Background">
+        <div class="start-overlay"></div>
+        <div class="start-content">
+            <span class="anemo-sigil" style="font-size: 3rem; display: block; margin-bottom: 20px;">❋</span>
+            <h1 class="start-title">Phuong's Personal Portfolio</h1>
+            <p class="start-prompt">Click anywhere to start</p>
+        </div>
+    </div>
+
+
+    <!-- Certificate Modal -->
+    <div id="cert-modal" class="cert-modal">
+        <span class="cert-modal-close">&times;</span>
+        <img id="cert-modal-img" src="" alt="Certificate">
+    </div>
+
+    <div id="white-flash"></div>
+
+    <!-- AUDIO -->
+    <audio id="intro-audio" loop>
+        <source src="intro/intromusic.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="door-audio">
+        <source src="intro/dooropensound.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="bg-music" loop>
+        <source src="intro/backgroundmusic.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- ============================================================
+         SCENE 1: INTRO
+    ============================================================ -->
+    <div id="intro-scene" class="scene active">
+
+        <!-- Ambient -->
+        <div class="ambient-bg">
+            <video id="intro-ambient" playsinline muted>
+                <source src="intro/intro.mp4" type="video/mp4">
+            </video>
+        </div>
+
+        <!-- Video chính -->
+        <div class="video-wrapper" id="intro-wrapper">
+            <video id="intro-vid" class="main-vid" playsinline muted>
+                <source src="intro/intro.mp4" type="video/mp4">
+            </video>
+        </div>
+
+        <!-- Lớp hiệu ứng frozen frame (ẩn khi intro còn chạy) -->
+    </div>
+
+    <div id="vignette"></div>
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- ============================================================
+         SCENE 2: DOOR OPEN
+    ============================================================ -->
+    <div id="door-scene" class="scene">
+        <div class="ambient-bg">
+            <video id="door-ambient" playsinline muted>
+                <source src="intro/dooropen.mp4" type="video/mp4">
+            </video>
+        </div>
+        <div class="video-wrapper" id="door-wrapper">
+            <video id="door-vid" class="main-vid" playsinline muted>
+                <source src="intro/dooropen.mp4" type="video/mp4">
+            </video>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         SCENE 3: MAIN WEB
+    ============================================================ -->
+    <div id="main-scene" class="scene">
+        <div class="ambient-bg">
+            <video autoplay loop muted playsinline>
+                <source src="content/webbackground.mp4?v=2" type="video/mp4">
+            </video>
+        </div>
+        <div id="main-bg-vid-wrapper">
+            <video id="main-bg-vid" autoplay loop muted playsinline>
+                <source src="content/webbackground.mp4?v=2" type="video/mp4">
+            </video>
+            <div class="main-overlay"></div>
+        </div>
+        <!-- ═══════════════════════════════════════════════
+             PORTFOLIO CONTENT - MONDSTADT STYLE
+        ════════════════════════════════════════════════ -->
+        <div class="portfolio-root">
+            <div id="tutorial-overlay" class="tutorial-overlay hidden"></div>
+            <div id="dandelion-container"></div>
+            <div id="music-backdrop" class="music-backdrop"></div>
+
+            <!-- PAIMON GUIDE COMPANION -->
+            <div id="paimon-guide" class="paimon-container">
+                <div class="paimon-dialog hidden">
+                    <p id="paimon-text">Hey Traveler! Let's explore!</p>
+                    <button id="paimon-action" class="genshin-btn paimon-btn">Teleport</button>
+                    <button id="paimon-close" class="paimon-close">×</button>
+                </div>
+                <img id="paimon-avatar" class="paimon-avatar" src="content/Paimon_(Genshin_Impact).png" alt="Paimon">
+            </div>
+
+            <!-- NAV -->
+            <nav class="genshin-nav">
+                <div class="nav-logo" style="gap: 15px;">
+                    <span class="anemo-sigil" style="margin-right: 5px;">❋</span>
+                    <!-- Music Player System -->
+                    <div class="music-system">
+                        <button id="music-btn" class="music-btn" title="Toggle Media Player">
+                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 18V5l12-2v13"></path>
+                                <circle cx="6" cy="18" r="3"></circle>
+                                <circle cx="18" cy="16" r="3"></circle>
+                            </svg>
+                        </button>
+                        <div class="music-dropdown hidden">
+                            <div id="tracklist-container" class="tracklist-container">
+                                <ul id="track-list" class="track-list">
+                                    <!-- Populated by JS -->
+                                </ul>
+                            </div>
+                            <div class="media-player">
+                                <div class="player-info">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <button id="btn-toggle-tracklist" class="btn-tracklist-menu" title="Toggle Tracklist">
+                                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="3" y1="12" x2="21" y2="12"></line>
+                                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                                <line x1="3" y1="18" x2="21" y2="18"></line>
+                                            </svg>
+                                        </button>
+                                        <span id="player-title" class="player-title">Track Name</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span id="player-time" class="player-time">00:00 / 00:00</span>
+                                        <button id="btn-hide-player" class="btn-hide-player" title="Hide Media Player">
+                                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="player-progress">
+                                    <input type="range" id="progress-bar" min="0" max="100" value="0">
+                                </div>
+                                <div class="player-controls">
+                                    <button id="btn-shuffle" class="control-btn" title="Shuffle">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                                    </button>
+                                    <button id="btn-prev" class="control-btn" title="Previous">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+                                    </button>
+                                    <button id="btn-play-pause" class="control-btn" title="Play/Pause">
+                                        <svg id="icon-play" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                        <svg id="icon-pause" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                                    </button>
+                                    <button id="btn-next" class="control-btn" title="Next">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+                                    </button>
+                                    <button id="btn-repeat" class="control-btn" title="Repeat">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="paimon-toggle-btn" class="paimon-toggle-btn" title="Toggle Paimon" style="margin-left: 0; padding: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid var(--gold-bright);">
+                        <img src="content/paimonicon.png" alt="Paimon" style="width: 100%; height: 100%; object-fit: cover;">
+                    </button>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#skills">Skills</a></li>
+                    <li><a href="#experience">Experience</a></li>
+                    <li><a href="#education">Education</a></li>
+                    <li><a href="#awards">Awards</a></li>
+                    <li><a href="#research">Research</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+
+            <!-- HERO -->
+            <section class="hero-section" id="about">
+                <div class="hero-decor top-left"></div>
+                <div class="hero-decor top-right"></div>
+                <div class="hero-inner">
+                    <div class="hero-badge">
+                        <img src="content/avatar.png" alt="Bui Tuan Phuong">
+                    </div>
+                    <h1 class="hero-name">Bui Tuan Phuong</h1>
+                    <p class="hero-title">English Tutor · Teaching Assistant · International Economics Student</p>
+                    <div class="hero-divider">
+                        <span class="divider-gem"></span>
+                        <span class="divider-line"></span>
+                        <span class="divider-gem"></span>
+                    </div>
+                    <p class="hero-quote">
+                        "Aspiring to accumulate teaching experience, refine communication skills, and become a professional educator or academic advisor."
+                    </p>
+                    <div class="hero-tags">
+                        <span class="tag anemo">IELTS 7.5</span>
+                        <span class="tag anemo">GPA 3.74</span>
+                        <span class="tag gold">Foreign Trade University</span>
+                    </div>
+                </div>
+                <div class="hero-decor bottom-left"></div>
+                <div class="hero-decor bottom-right"></div>
+            </section>
+
+            <!-- SKILLS -->
+            <section class="section" id="skills">
+                <div class="section-header">
+                    <span class="section-gem"></span>
+                    <h2 class="section-title">Skills</h2>
+                    <span class="section-gem"></span>
+                </div>
+
+                <div class="cards-grid">
+                    <!-- Card 1 -->
+                    <div class="genshin-card">
+                        <div class="card-icon">📖</div>
+                        <h3 class="card-title">English Tutoring</h3>
+                        <p class="card-desc">Develop tailored learning paths. Foster balanced growth in Listening, Speaking, Reading, and Writing. Patient, detail-oriented in correcting mistakes, and constantly encouraging student progress.</p>
+                        <div class="card-footer">
+                            <span class="skill-bar">
+                                <span class="skill-fill" style="width:90%"></span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="genshin-card">
+                        <div class="card-icon">📐</div>
+                        <h3 class="card-title">Math Tutoring</h3>
+                        <p class="card-desc">Explain concepts clearly, analyze problems, and provide multiple solutions. Cultivate logical thinking and clear presentation skills. Closely monitor progress and adapt teaching methods flexibly.</p>
+                        <div class="card-footer">
+                            <span class="skill-bar">
+                                <span class="skill-fill" style="width:85%"></span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="genshin-card">
+                        <div class="card-icon">🌐</div>
+                        <h3 class="card-title">Foreign Languages</h3>
+                        <p class="card-desc">Fluent English (IELTS 7.5). Currently learning Japanese (JLPT N4). Confident in communicating and teaching in English.</p>
+                        <div class="card-footer">
+                            <span class="skill-bar">
+                                <span class="skill-fill" style="width:92%"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- EXPERIENCE -->
+            <section class="section" id="experience">
+                <div class="section-header">
+                    <span class="section-gem"></span>
+                    <h2 class="section-title">Experience</h2>
+                    <span class="section-gem"></span>
+                </div>
+
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-card">
+                            <div class="tl-top">
+                                <h3 class="tl-title">English Teaching Assistant</h3>
+                                <span class="tl-date">7/2024 - Present</span>
+                            </div>
+                            <p class="tl-org">Sao Viet Cultural Enrichment Center</p>
+                            <p class="tl-desc">Experienced in tutoring, assisting, and leading classes of various proficiency levels.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-card">
+                            <div class="tl-top">
+                                <h3 class="tl-title">Math & English Tutor</h3>
+                                <span class="tl-date">7/2024 - Present</span>
+                            </div>
+                            <p class="tl-org">Freelance</p>
+                            <p class="tl-desc">Tutoring elementary and middle school students. All students have shown significant improvement in their academic results.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-card">
+                            <div class="tl-top">
+                                <h3 class="tl-title">Student Volunteer</h3>
+                                <span class="tl-date">8/2024 - Present</span>
+                            </div>
+                            <p class="tl-org">Faculty of International Economics, FTU</p>
+                            <p class="tl-desc">Assisting the faculty in major events such as Vietnamese Teachers' Day and the 65th & 40th Anniversaries.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-card">
+                            <div class="tl-top">
+                                <h3 class="tl-title">Store Clerk</h3>
+                                <span class="tl-date">2015 - Present</span>
+                            </div>
+                            <p class="tl-org">Nam Phuong Grocery</p>
+                            <p class="tl-desc">Experienced in sales, customer service, bookkeeping, supply chain management, and ensuring monthly revenue targets.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- EDUCATION & AWARDS -->
+            <section class="section" id="education">
+                <div class="edu-awards-grid">
+                    <!-- EDUCATION -->
+                    <div>
+                        <div class="section-header left">
+                            <span class="section-gem small"></span>
+                            <h2 class="section-title small">Education</h2>
+                        </div>
+                        <div class="genshin-card highlight">
+                            <div class="card-icon">🏛️</div>
+                            <h3 class="card-title">High-Quality International Economics</h3>
+                            <p class="card-org">Foreign Trade University</p>
+                            <p class="card-desc">8/2024 - Present</p>
+                            <div class="achievement-pills">
+                                <span class="pill gold">GPA 3.63 (Year 1)</span>
+                                <span class="pill anemo">GPA 3.74 (Year 2 Sem 1)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AWARDS -->
+                    <div id="awards">
+                        <div class="section-header left">
+                            <span class="section-gem small"></span>
+                            <h2 class="section-title small">Awards & Certificates</h2>
+                        </div>
+                        <div class="awards-list">
+                            <div class="award-item">
+                                <span class="award-icon">🏆</span>
+                                <div>
+                                    <p class="award-title">Consolation Prize - University Level Math Olympiad</p>
+                                    <p class="award-date">April 2024 · Grade 12 · HNUE</p>
+                                </div>
+                            </div>
+                            <div class="award-item">
+                                <span class="award-icon">🏆</span>
+                                <div>
+                                    <p class="award-title">Consolation Prize - City Level Math Olympiad</p>
+                                    <p class="award-date">Nov 2023 · Grade 12 · Hanoi</p>
+                                </div>
+                            </div>                            <div class="award-item cert" data-img="content/IELTS.jpg">
+                                <span class="award-icon">🎓</span>
+                                <div>
+                                    <p class="award-title">IELTS 7.5</p>
+                                    <p class="award-date">Aug 2023</p>
+                                </div>
+                            </div>
+                            <div class="award-item cert" data-img="content/JLPT N4.jpg">
+                                <span class="award-icon">🎓</span>
+                                <div>
+                                    <p class="award-title">JLPT N4</p>
+                                    <p class="award-date">Jan 2026 (91/180)</p>
+                                </div>
+                            </div>
+                            <div class="award-item cert" data-img="content/JLPT N5.jpg">
+                                <span class="award-icon">🎓</span>
+                                <div>
+                                    <p class="award-title">JLPT N5</p>
+                                    <p class="award-date">Aug 2023 (104/180)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RESEARCH / PUBLICATIONS -->
+            <section class="section" id="research">
+                <div class="section-header">
+                    <span class="section-gem"></span>
+                    <h2 class="section-title">Research & Essays</h2>
+                    <span class="section-gem"></span>
+                </div>
+                <div class="edu-awards-grid" style="grid-template-columns: 1fr; gap: 20px;">
+                    <!-- Paper 1 -->
+                    <div class="research-card genshin-card highlight">
+                        <div class="card-icon">📄</div>
+                        <h3 class="card-title" style="font-size: 1.1rem; line-height: 1.4;">THE IMPACT OF ECONOMIC GROWTH ON ECONOMIC COMPLEXITY A COMPARATIVE ANALYSIS OF ASEAN COUNTRIES</h3>
+                        <p class="card-org" style="color: var(--anemo-light); margin-top: 5px;">Subject: Macroeconomics 2</p>
+                        <div style="margin-top: 15px; color: var(--gold-dark); font-size: 0.85rem; font-style: italic;">Hover to view Abstract</div>
+                        <div class="research-curtain">
+                            <div class="abstract-content">
+                                <h4 style="color: var(--gold-bright); margin-bottom: 10px; font-family: var(--font-title); text-align: center;">Abstract</h4>
+                                <p class="abstract-text">This study examines the impact of economic growth on economic complexity across nine ASEAN member states over a 20-year period from 2004 to 2023. Employing a panel data regression model with Robust Standard Errors to address heteroskedasticity, the research investigates both macroeconomic and structural determinants of the Economic Complexity Index (ECI). Contrary to initial hypotheses, the empirical results reveal that short-term economic expansion (GDP growth) and trade openness exhibit a negative impact on economic complexity...</p>
+                            </div>
+                            <a href="content/THE IMPACT OF ECONOMIC GROWTH ON ECONOMIC COMPLEXITY A COMPARATIVE ANALYSIS OF ASEAN COUNTRIES - Macroeconomics 2.docx" class="genshin-btn small" style="margin-top: 15px; text-decoration: none;" download>View Details</a>
+                        </div>
+                    </div>
+                    <!-- Paper 2 -->
+                    <div class="research-card genshin-card highlight">
+                        <div class="card-icon">📄</div>
+                        <h3 class="card-title" style="font-size: 1.1rem; line-height: 1.4;">Market Structure Analysis and Production Function Estimation An Empirical Study of the Seafood Processing Industry in Vietnam</h3>
+                        <p class="card-org" style="color: var(--anemo-light); margin-top: 5px;">Subject: Industrial Organization</p>
+                        <div style="margin-top: 15px; color: var(--gold-dark); font-size: 0.85rem; font-style: italic;">Hover to view Abstract</div>
+                        <div class="research-curtain">
+                            <div class="abstract-content">
+                                <h4 style="color: var(--gold-bright); margin-bottom: 10px; font-family: var(--font-title); text-align: center;">Abstract</h4>
+                                <p class="abstract-text">Purpose - This study aims to integrate industrial organization theory with microeconomic production analysis to investigate the determinants of firm performance in Vietnam's seafood processing industry. The primary objective is twofold: to quantify market concentration and to empirically estimate the industry's production function. Design/methodology - The research utilizes an unbalanced panel dataset of 435 seafood processing enterprises from 2012 to 2016. By applying the translog production function and calculating the Herfindahl-Hirschman Index (HHI), the study captures the non-linear relationship between input factors (capital, labor, and raw materials) and output. Findings highlight that while the industry is structurally competitive, scale inefficiencies and capital constraints significantly hinder profitability. Recommendations emphasize technological upgrading and strategic clustering to enhance global competitiveness.</p>
+                            </div>
+                            <a href="content/Market Structure Analysis and Production Function Estimation An Empirical Study of the Seafood Processing Industry in Vietnam - Industrial Organization.docx" class="genshin-btn small" style="margin-top: 15px; text-decoration: none;" download>View Details</a>
+                        </div>
+                    </div>
+                    <!-- Paper 3 -->
+                    <div class="research-card genshin-card highlight">
+                        <div class="card-icon">📄</div>
+                        <h3 class="card-title" style="font-size: 1.1rem; line-height: 1.4;">THE IMPACT OF INTERNET PENETRATION ON BANK PROFITABILITY EMPIRICAL EVIDENCE FROM 57 COUNTRIES AND IMPLICATIONS FOR VIETNAM’S COMMERCIAL BANKS (2018 - 2024)</h3>
+                        <p class="card-org" style="color: var(--anemo-light); margin-top: 5px;">Subject: Digital Economics</p>
+                        <div style="margin-top: 15px; color: var(--gold-dark); font-size: 0.85rem; font-style: italic;">Hover to view Abstract</div>
+                        <div class="research-curtain">
+                            <div class="abstract-content">
+                                <h4 style="color: var(--gold-bright); margin-bottom: 10px; font-family: var(--font-title); text-align: center;">Abstract</h4>
+                                <p class="abstract-text">This study explores the rationale, objectives, and scope of internet penetration on bank profitability. It examines empirical evidence from 57 countries and provides implications for Vietnam's commercial banks. It investigates transaction cost theory, technology acceptance model, and digital transmission channels that affect ROA metrics across the global banking sector. By utilizing Generalized Method of Moments (GMM) estimators to address potential endogeneity, our findings reveal an inverted U-shaped relationship between internet penetration and profitability. Initially, the high costs of digital infrastructure depress margins; however, crossing a specific threshold of adoption triggers substantial operational cost reductions and enhanced fee-based income, ultimately amplifying profitability for proactive institutions.</p>
+                            </div>
+                            <a href="content/THE IMPACT OF INTERNET PENETRATION ON BANK PROFITABILITY EMPIRICAL EVIDENCE FROM 57 COUNTRIES AND IMPLICATIONS FOR VIETNAM’S COMMERCIAL BANKS (2018 - 2024) - Digital Economics.docx" class="genshin-btn small" style="margin-top: 15px; text-decoration: none;" download>View Details</a>
+                        </div>
+                    </div>
+                    <!-- Paper 4 -->
+                    <div class="research-card genshin-card highlight">
+                        <div class="card-icon">📄</div>
+                        <h3 class="card-title" style="font-size: 1.1rem; line-height: 1.4;">APPLICATION OF BLOCKCHAIN TECHNOLOGY IN INTERNATIONAL PAYMENT BY LC OF VIETNAMESE COMMERCIAL BANKS</h3>
+                        <p class="card-org" style="color: var(--anemo-light); margin-top: 5px;">Subject: International Payment</p>
+                        <div style="margin-top: 15px; color: var(--gold-dark); font-size: 0.85rem; font-style: italic;">Hover to view Introduction</div>
+                        <div class="research-curtain">
+                            <div class="abstract-content">
+                                <h4 style="color: var(--gold-bright); margin-bottom: 10px; font-family: var(--font-title); text-align: center;">Introduction</h4>
+                                <p class="abstract-text">International trade is the lifeblood of the global economy, and for over a century, the Letter of Credit (L/C) has served as its foundational instrument for risk mitigation. By substituting a bank's creditworthiness for that of an importer, the L/C establishes essential trust between cross-border parties. However, despite its critical role, the underlying mechanics of the traditional L/C remain tethered to archaic, paper-intensive processes that are susceptible to fraud, delays, and exorbitant compliance costs. This research proposes the implementation of Distributed Ledger Technology (DLT), specifically smart contracts via platforms like Hyperledger Fabric, to automate document verification. The findings demonstrate that blockchain application can reduce transaction processing time from 5-10 days to under 24 hours, significantly mitigating human errors and enhancing transparency in Vietnamese commercial banks.</p>
+                            </div>
+                            <a href="content/APPLICATION OF BLOCKCHAIN TECHNOLOGY IN INTERNATIONAL PAYMENT BY LC OF VIETNAMESE COMMERCIAL BANKS - International Payment.docx" class="genshin-btn small" style="margin-top: 15px; text-decoration: none;" download>View Details</a>
+                        </div>
+                    </div>
+                    <!-- Paper 5 -->
+                    <div class="research-card genshin-card highlight">
+                        <div class="card-icon">📄</div>
+                        <h3 class="card-title" style="font-size: 1.1rem; line-height: 1.4;">DEMOGRAPHIC AND SOCIO-ECONOMIC DETERMINANTS OF INCOME PER CAPITA IN VIETNAM AN ANALYSIS USING PROVINCIAL DATA IN 2023</h3>
+                        <p class="card-org" style="color: var(--anemo-light); margin-top: 5px;">Subject: Econometrics 1</p>
+                        <div style="margin-top: 15px; color: var(--gold-dark); font-size: 0.85rem; font-style: italic;">Hover to view Abstract</div>
+                        <div class="research-curtain">
+                            <div class="abstract-content">
+                                <h4 style="color: var(--gold-bright); margin-bottom: 10px; font-family: var(--font-title); text-align: center;">Abstract</h4>
+                                <p class="abstract-text">This study provides a quantitative analysis of the demographic and socio-economic determinants affecting income per capita in Vietnam. Utilizing an econometrics model with provincial data from 2023, the research aims to uncover correlations and significant factors impacting regional economic development and income distribution across different provinces. The methodology incorporates spatial autoregressive (SAR) models to account for regional spillover effects. Empirical findings underscore that urbanization rates, Foreign Direct Investment (FDI) inflows, and educational attainment levels are the most statistically significant drivers of income per capita. Additionally, the study identifies a growing rural-urban income disparity and suggests targeted policy interventions, focusing on infrastructure development and vocational training in lagging regions, to promote inclusive economic growth.</p>
+                            </div>
+                            <a href="content/DEMOGRAPHIC AND SOCIO-ECONOMIC DETERMINANTS OF INCOME PER CAPITA IN VIETNAM AN ANALYSIS USING PROVINCIAL DATA IN 2023 - Econometrics 1.docx" class="genshin-btn small" style="margin-top: 15px; text-decoration: none;" download>View Details</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CONTACT -->
+            <section class="section contact-section" id="contact">
+                <div class="section-header">
+                    <span class="section-gem"></span>
+                    <h2 class="section-title">Contact</h2>
+                    <span class="section-gem"></span>
+                </div>
+                <div class="contact-grid">
+                    <a class="contact-card" href="tel:0367620157">
+                        <span class="contact-icon">📞</span>
+                        <span class="contact-label">0367 620 157</span>
+                    </a>
+                    <a class="contact-card" href="mailto:buitanphuong2006@gmail.com">
+                        <span class="contact-icon">✉️</span>
+                        <span class="contact-label">buitanphuong2006@gmail.com</span>
+                    </a>
+                    <a class="contact-card" href="https://www.facebook.com/phuong.buituan.93/" target="_blank">
+                        <span class="contact-icon">🌐</span>
+                        <span class="contact-label">Facebook</span>
+                    </a>
+                    <a class="contact-card" href="#">
+                        <span class="contact-icon">📍</span>
+                        <span class="contact-label">Nam Tu Liem District, Hanoi</span>
+                    </a>
+                </div>
+            </section>
+
+            <!-- FOOTER -->
+            <footer class="genshin-footer">
+                <span class="anemo-sigil">❋</span>
+                <span>Bui Tuan Phuong · Portfolio 2025</span>
+                <span class="anemo-sigil">❋</span>
+            </footer>
+
+        </div><!-- end .portfolio-root -->
+    </div><!-- end #main-scene -->
+
+    <!-- QUEST MODAL -->
+    <div id="unlock-modal" class="unlock-modal">
+        <h3 style="color: #ff5555;">ERROR!</h3>
+        <p>Unlocking requirement: Explore at least ONE content in this portfolio.</p>
+        <button id="close-modal-btn" class="unlock-modal-btn">OK</button>
+    </div>
+    
+    <!-- QUEST TOAST -->
+    <div id="quest-toast" class="quest-toast">Quest completed!</div>
+
+    <script>
+        // ── ELEMENTS ────────────────────────────────────────────────
+        const scenes = {
+            intro: document.getElementById('intro-scene'),
+            door:  document.getElementById('door-scene'),
+            main:  document.getElementById('main-scene')
+        };
+        const vids = {
+            intro:        document.getElementById('intro-vid'),
+            introAmbient: document.getElementById('intro-ambient'),
+            door:         document.getElementById('door-vid'),
+            doorAmbient:  document.getElementById('door-ambient')
+        };
+        const audios = {
+            intro: document.getElementById('intro-audio'),
+            door:  document.getElementById('door-audio'),
+            bg:    document.getElementById('bg-music')
+        };
+        const whiteFlash      = document.getElementById('white-flash');
+        const introWrapper    = document.getElementById('intro-wrapper');
+        const vignette        = document.getElementById('vignette');
+        const particlesCanvas = document.getElementById('particles-canvas');
+        const ctx             = particlesCanvas.getContext('2d');
+
+        let isIntroFinished = false;
+
+        function switchScene(from, to) {
+            from.classList.remove('active');
+            to.classList.add('active');
+        }
+
+        // ─── MUSIC PLAYER LOGIC ────────────────────────────────────────
+        const musicBtn = document.getElementById('music-btn');
+        const tracklistContainer = document.getElementById('tracklist-container');
+        const trackListUI = document.getElementById('track-list');
+        const titleUI = document.getElementById('player-title');
+        const timeUI = document.getElementById('player-time');
+        const progressBar = document.getElementById('progress-bar');
+        const btnPlayPause = document.getElementById('btn-play-pause');
+        const btnNext = document.getElementById('btn-next');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnShuffle = document.getElementById('btn-shuffle');
+        const btnRepeat = document.getElementById('btn-repeat');
+        const musicBackdrop = document.getElementById('music-backdrop');
+        const iconPlay = document.getElementById('icon-play');
+        const iconPause = document.getElementById('icon-pause');
+        
+        let rawTracks = [
+            { name: 'A Day in Mondstadt', file: 'music/A Day in Mondstadt.mp3' },
+            { name: 'Bustling Afternoon of Mondstadt', file: 'music/Bustling Afternoon of Mondstadt.mp3' },
+            { name: 'Dusk in Mondstadt', file: 'music/Dusk in Mondstadt.mp3' },
+            { name: 'Knights of Favonius', file: 'music/Knights of Favonius.m4a' },
+            { name: 'Legend of the Wind', file: 'music/Legend of the Wind.mp3' },
+            { name: 'Midnight in Monstadt', file: 'music/Midnight in Monstadt.m4a' },
+            { name: 'Mondstadt Starlit', file: 'music/Mondstadt Starlit.m4a' },
+            { name: 'Moonlike Smile', file: 'music/Moonlike-Smile.m4a' },
+            { name: 'Ripples of Daydream', file: 'music/Ripples-of-Daydream.m4a' },
+            { name: 'Say My Name', file: 'music/Say My Name.m4a' },
+            { name: 'The City Favored By Wind', file: 'music/The City Favored By Wind.mp3' },
+            { name: 'Whence the Flow Cometh', file: 'music/Whence-the-Flow-Cometh.m4a' },
+            { name: 'Windborne Hymn', file: 'music/WIndborne Hymn.m4a' }
+        ];
+        
+        let hiddenTrack = { name: 'Hidden track (do not click)', file: 'music/Hidden track (do not click).m4a' };
+        
+        // Sắp xếp bài hát theo ABC và đẩy hidden track xuống cuối
+        let tracks = rawTracks.sort((a, b) => a.name.localeCompare(b.name));
+        tracks.push(hiddenTrack);
+        
+        let currentTrackIndex = 0; // Bắt đầu với bài đầu tiên
+        let isShuffle = false;
+        let repeatMode = 0; // 0: Tắt, 1: Lặp lại danh sách, 2: Lặp lại 1 bài
+        let isHiddenTrackUnlocked = false;
+        let hasSeenUnlockModal = false;
+
+        audios.bg.loop = false; // Tắt loop mặc định
+
+        const unlockModal = document.getElementById('unlock-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+
+        closeModalBtn.addEventListener('click', () => {
+            unlockModal.classList.remove('active');
+        });
+
+        // Render Tracklist UI
+        function renderTracklist() {
+            trackListUI.innerHTML = '';
+            tracks.forEach((track, index) => {
+                let li = document.createElement('li');
+                li.className = 'track-item';
+                li.textContent = track.name;
+                
+                let isHidden = track.name === 'Hidden track (do not click)';
+                
+                if (isHidden && !isHiddenTrackUnlocked) {
+                    li.classList.add('track-locked');
+                    let lockIcon = document.createElement('span');
+                    lockIcon.className = 'lock-icon';
+                    lockIcon.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+                    li.appendChild(lockIcon);
+                } else if (isHidden && isHiddenTrackUnlocked) {
+                    let unlockIcon = document.createElement('span');
+                    unlockIcon.className = 'lock-icon';
+                    unlockIcon.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>';
+                    li.appendChild(unlockIcon);
+                }
+                
+                if (index === currentTrackIndex) {
+                    li.classList.add('active');
+                }
+                
+                li.addEventListener('click', () => {
+                    if (isHidden && !isHiddenTrackUnlocked) {
+                        hasSeenUnlockModal = true;
+                        unlockModal.classList.add('active');
+                        return; // Không cho phát nhạc
+                    }
+                    currentTrackIndex = index;
+                    loadAndPlayTrack();
+                });
+                trackListUI.appendChild(li);
+            });
+        }
+        renderTracklist();
+
+        // Unlock Quest Trigger: Click vào content cụ thể
+        const portfolioRoot = document.querySelector('.portfolio-root');
+        
+        // Paimon Data
+        let exploredSections = [];
+        let hasGivenReward = false;
+        const allSections = ['about', 'skills', 'experience', 'education', 'awards', 'research', 'contact'];
+
+        // Mobile Research Cards Touch Logic
+        document.querySelectorAll('.research-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (window.matchMedia('(hover: none)').matches) {
+                    if (this.classList.contains('active')) {
+                        this.classList.remove('active');
+                    } else {
+                        document.querySelectorAll('.research-card.active').forEach(c => c.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                }
+            });
+        });
+
+        
+        portfolioRoot.addEventListener('click', (e) => {
+            // Kiểm tra xem user có click vào nội dung cụ thể không (tránh click vào khoảng không)
+            const isContentClick = e.target.closest('.genshin-card, .timeline-item, .genshin-btn, .nav-link, h1, h2, h3, p, span, img');
+            
+            // Paimon Tracking
+            const section = e.target.closest('section');
+            if (section && section.id) {
+                if (!exploredSections.includes(section.id) && allSections.includes(section.id)) {
+                    exploredSections.push(section.id);
+                }
+            }
+            
+            // Không tính khi click vào khu vực music player
+            if (e.target.closest('.music-system')) return;
+            
+            if (isContentClick && hasSeenUnlockModal && !isHiddenTrackUnlocked) {
+                isHiddenTrackUnlocked = true;
+                renderTracklist();
+                
+                // Hiển thị Quest completed toast
+                const toast = document.getElementById('quest-toast');
+                if (toast) {
+                    toast.classList.add('active');
+                    setTimeout(() => toast.classList.remove('active'), 3000);
+                }
+            }
+        });
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "00:00";
+            let min = Math.floor(seconds / 60);
+            let sec = Math.floor(seconds % 60);
+            return (min < 10 ? '0' : '') + min + ':' + (sec < 10 ? '0' : '') + sec;
+        }
+
+        // Tải và phát bài hát
+        function loadAndPlayTrack(withFadeIn = false) {
+            let track = tracks[currentTrackIndex];
+            if (audios.bg.src.indexOf(encodeURI(track.file)) === -1) {
+                audios.bg.src = track.file;
+            }
+            titleUI.textContent = track.name;
+            
+            // Cập nhật trạng thái đang phát trong danh sách
+            document.querySelectorAll('.track-item').forEach((li, idx) => {
+                if (idx === currentTrackIndex) li.classList.add('active');
+                else li.classList.remove('active');
+            });
+            
+            if (withFadeIn) audios.bg.volume = 0;
+            
+            audios.bg.play().then(() => {
+                iconPlay.style.display = 'none';
+                iconPause.style.display = 'block';
+                if (withFadeIn) fadeAudio(audios.bg, 0, 1, 3000);
+            }).catch(e => {
+                // Dự phòng nếu trình duyệt chặn autoplay
+                if (withFadeIn) {
+                    document.addEventListener('pointerdown', () => {
+                        audios.bg.play().then(() => {
+                            iconPlay.style.display = 'none';
+                            iconPause.style.display = 'block';
+                            fadeAudio(audios.bg, 0, 1, 3000);
+                        });
+                    }, { once: true });
+                }
+            });
+        }
+
+        // -------------------------
+        // PAIMON LOGIC
+        // -------------------------
+        const paimonContainer = document.getElementById('paimon-guide');
+        const paimonAvatar = document.getElementById('paimon-avatar');
+        const paimonDialog = document.querySelector('.paimon-dialog');
+        const paimonText = document.getElementById('paimon-text');
+        const paimonAction = document.getElementById('paimon-action');
+        const paimonClose = document.getElementById('paimon-close');
+        const paimonToggleBtn = document.getElementById('paimon-toggle-btn');
+        
+        const sectionNames = {
+            'about': 'About',
+            'skills': 'Skills',
+            'experience': 'Experience',
+            'education': 'Education',
+            'awards': 'Awards',
+            'research': 'Research & Essays',
+            'contact': 'Contact'
+        };
+        let suggestedSection = null;
+
+        if (paimonToggleBtn) {
+            paimonToggleBtn.addEventListener('click', () => {
+                paimonContainer.classList.toggle('hidden');
+            });
+        }
+        
+        // Tutorial State
+        let tutorialStep = -1;
+        const tutorialElements = [
+            { id: 'genshin-nav', text: 'This is the Navigation Bar. You can use it to quickly jump to different sections of the page!' },
+            { id: 'music-btn', text: 'In the top right is the Music button. Click here to toggle the Media Player!' },
+            { id: 'btn-toggle-tracklist', text: 'Inside the Media Player is the Menu button. Click it to open the Tracklist!', preAction: () => { const md = document.querySelector('.music-dropdown'); if (md) md.classList.remove('hidden'); } },
+            { id: 'paimon-toggle-btn', text: "In the top left is Paimon's icon. Click here to summon me or let me rest!" },
+            { id: 'paimon-avatar', text: "Finally, if you don't know what to explore next, just click on me and Paimon will give you a suggestion!" }
+        ];
+        
+        function forceCleanupTutorial() {
+            document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+            document.querySelectorAll('.tutorial-parent-elevate').forEach(el => el.classList.remove('tutorial-parent-elevate'));
+            document.querySelectorAll('.local-tutorial-overlay').forEach(el => el.remove());
+            const globalOverlay = document.getElementById('tutorial-overlay');
+            if(globalOverlay) globalOverlay.classList.add('hidden');
+        }
+        
+        function highlightTutorialStep(stepIndex) {
+            document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+            document.querySelectorAll('.tutorial-parent-elevate').forEach(el => el.classList.remove('tutorial-parent-elevate'));
+            document.querySelectorAll('.local-tutorial-overlay').forEach(el => el.remove());
+            
+            if (stepIndex >= tutorialElements.length) {
+                tutorialStep = -1;
+                document.getElementById('tutorial-overlay').classList.add('hidden');
+                paimonText.innerHTML = "That's it! Now feel free to explore, Traveler! Have fun! ✨";
+                paimonAction.innerHTML = "Let's explore!";
+                suggestedSection = 'tutorial_end';
+                paimonAction.style.display = 'block';
+                return;
+            }
+            
+            const step = tutorialElements[stepIndex];
+            if (step.preAction) step.preAction();
+            
+            let targetEl = document.getElementById(step.id) || document.querySelector('.' + step.id);
+            if (targetEl) {
+                targetEl.classList.add('tutorial-highlight');
+                
+                let parent = targetEl.parentElement;
+                while(parent && parent.classList && !parent.classList.contains('portfolio-root') && parent !== document.body) {
+                    const style = window.getComputedStyle(parent);
+                    if (style.zIndex !== 'auto' && style.position !== 'static') {
+                        parent.classList.add('tutorial-parent-elevate');
+                        let overlay = document.createElement('div');
+                        overlay.className = 'local-tutorial-overlay';
+                        parent.appendChild(overlay);
+                    }
+                    parent = parent.parentElement;
+                }
+                
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            paimonText.innerHTML = step.text;
+            paimonAction.innerHTML = "Next ➜";
+            suggestedSection = 'tutorial_next';
+            paimonAction.style.display = 'block';
+        }
+
+        // Auto-show Paimon on load
+        setTimeout(() => {
+            if (paimonDialog && paimonContainer && !paimonContainer.classList.contains('hidden')) {
+                paimonDialog.classList.remove('hidden');
+                paimonText.innerHTML = "Hi Traveler! Welcome to my Portfolio! ✨<br><br>Would you like Paimon to show you around?";
+                paimonAction.innerHTML = "Start Tutorial 🗺️";
+                suggestedSection = 'tutorial_start';
+                paimonAction.style.display = 'block';
+            }
+        }, 1500);
+
+        const notExploredLines = [
+            "Hey Traveler! You haven't explored the <b style=\"color:var(--gold-bright)\">{section}</b> section yet. Let's go!",
+            "Paimon thinks we should check out <b style=\"color:var(--gold-bright)\">{section}</b> next. What do you say?",
+            "Look over there! The <b style=\"color:var(--gold-bright)\">{section}</b> section is waiting for us!",
+            "Traveler! Don't forget to look at the <b style=\"color:var(--gold-bright)\">{section}</b> part of the portfolio!",
+            "Ooh, Paimon is curious about your <b style=\"color:var(--gold-bright)\">{section}</b>. Let's take a look!"
+        ];
+        
+        const fullyExploredLines = [
+            "Wow! You've explored every corner of this portfolio! Paimon is impressed!",
+            "Looks like we've seen it all, Traveler! Good job!",
+            "Paimon is tired from all this exploring. But we checked everything!",
+            "Every section has been visited. You're a true adventurer!"
+        ];
+        
+        const cheerLines = [
+            "You're doing great, Traveler! Keep up the good work! ✨",
+            "Paimon believes in you! You can do anything you set your mind to! ᕙ(`▽´)ᕗ",
+            "Is it time for a snack break? Paimon could really go for some Sticky Honey Roast right now... 🤤",
+            "Don't push yourself too hard! Taking a break is just as important as working hard! 🛌",
+            "Hehe, Paimon is always here to cheer you on! 🌟",
+            "Whatever challenges come your way, Paimon knows you'll overcome them! ⚔️"
+        ];
+
+        if (paimonAvatar) {
+            paimonAvatar.addEventListener('click', () => {
+                if (tutorialStep !== -1 || suggestedSection === 'tutorial_end') return;
+                // Kích hoạt animation nhảy
+                paimonAvatar.classList.remove('jump');
+                void paimonAvatar.offsetWidth; // trigger reflow
+                paimonAvatar.classList.add('jump');
+                setTimeout(() => {
+                    if (paimonAvatar) paimonAvatar.classList.remove('jump');
+                }, 500);
+
+                const unexplored = allSections.filter(s => !exploredSections.includes(s));
+                if (unexplored.length > 0) {
+                    // 25% cơ hội Paimon nói những câu đáng yêu/cổ vũ thay vì gợi ý
+                    if (Math.random() < 0.25) {
+                        suggestedSection = null;
+                        const randomLine = cheerLines[Math.floor(Math.random() * cheerLines.length)];
+                        paimonText.innerHTML = randomLine;
+                        paimonAction.style.display = 'none';
+                    } else {
+                        suggestedSection = unexplored[Math.floor(Math.random() * unexplored.length)];
+                        const randomLine = notExploredLines[Math.floor(Math.random() * notExploredLines.length)].replace('{section}', sectionNames[suggestedSection]);
+                        paimonText.innerHTML = randomLine;
+                        paimonAction.innerHTML = "Teleport 🌠";
+                        paimonAction.style.display = 'block';
+                    }
+                } else {
+                    if (!hasGivenReward) {
+                        suggestedSection = 'reward';
+                        paimonText.innerHTML = "Wow! You've explored every corner of this portfolio! Paimon is impressed! Here is a special reward just for you! ✨";
+                        paimonAction.innerHTML = "Reward 🎁";
+                        paimonAction.style.display = 'block';
+                        hasGivenReward = true;
+                    } else {
+                        suggestedSection = null;
+                        const allFunLines = fullyExploredLines.concat(cheerLines);
+                        const randomLine = allFunLines[Math.floor(Math.random() * allFunLines.length)];
+                        paimonText.innerHTML = randomLine;
+                        paimonAction.style.display = 'none';
+                    }
+                }
+                paimonDialog.classList.remove('hidden');
+            });
+        }
+
+        if (paimonClose) {
+                        paimonClose.addEventListener('click', (e) => {
+                e.stopPropagation();
+                paimonDialog.classList.add('hidden');
+                if (tutorialStep >= 0) {
+                    tutorialStep = -1;
+                    forceCleanupTutorial();
+                }
+            });
+        }
+
+        if (paimonAction) {
+            paimonAction.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (suggestedSection === 'reward') {
+                    window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1', '_blank');
+                    paimonDialog.classList.add('hidden');
+                } else if (suggestedSection === 'tutorial_start') {
+                    const overlay = document.getElementById('tutorial-overlay');
+                    if (overlay) overlay.classList.remove('hidden');
+                    tutorialStep = 0;
+                    highlightTutorialStep(tutorialStep);
+                } else if (suggestedSection === 'tutorial_next') {
+                    tutorialStep++;
+                    highlightTutorialStep(tutorialStep);
+                } else if (suggestedSection === 'tutorial_end') {
+                    paimonDialog.classList.add('hidden');
+                    const md = document.querySelector('.music-dropdown');
+                    if (md && !md.classList.contains('hidden')) {
+                        md.classList.add('hidden');
+                    }
+                    suggestedSection = null;
+                forceCleanupTutorial();
+                } else if (suggestedSection) {
+                    const targetEl = document.getElementById(suggestedSection);
+                    if (targetEl) {
+                        targetEl.scrollIntoView({ behavior: 'smooth' });
+                        if (!exploredSections.includes(suggestedSection)) {
+                            exploredSections.push(suggestedSection);
+                        }
+                    }
+                    paimonDialog.classList.add('hidden');
+                }
+            });
+        }
+        // -------------------------
+
+        // Bật/tắt dropdown và hiệu ứng mờ web
+        const btnHidePlayer = document.getElementById('btn-hide-player');
+        const musicDropdown = document.querySelector('.music-dropdown');
+
+        btnHidePlayer.addEventListener('click', () => {
+            musicDropdown.classList.add('hidden');
+            if (tracklistContainer.classList.contains('open')) {
+                tracklistContainer.classList.remove('open');
+                musicBackdrop.classList.remove('active');
+            }
+        });
+
+        const btnToggleTracklist = document.getElementById('btn-toggle-tracklist');
+        btnToggleTracklist.addEventListener('click', () => {
+            tracklistContainer.classList.toggle('open');
+            musicBackdrop.classList.toggle('active');
+        });
+
+        musicBtn.addEventListener('click', () => {
+            if (musicDropdown.classList.contains('hidden')) {
+                musicDropdown.classList.remove('hidden');
+            } else {
+                musicDropdown.classList.add('hidden');
+                if (tracklistContainer.classList.contains('open')) {
+                    tracklistContainer.classList.remove('open');
+                    musicBackdrop.classList.remove('active');
+                }
+            }
+        });
+
+        // Bấm ra ngoài (lên lớp mờ) để đóng
+        musicBackdrop.addEventListener('click', () => {
+            tracklistContainer.classList.remove('open');
+            musicBackdrop.classList.remove('active');
+        });
+
+        // Play/Pause
+        btnPlayPause.addEventListener('click', () => {
+            if (audios.bg.paused) {
+                audios.bg.play();
+                iconPlay.style.display = 'none';
+                iconPause.style.display = 'block';
+            } else {
+                audios.bg.pause();
+                iconPlay.style.display = 'block';
+                iconPause.style.display = 'none';
+            }
+        });
+
+        // Next/Prev Bài Hát
+        function playNext() {
+            const playableLength = isHiddenTrackUnlocked ? tracks.length : tracks.length - 1;
+            if (isShuffle) {
+                currentTrackIndex = Math.floor(Math.random() * playableLength);
+            } else {
+                currentTrackIndex = (currentTrackIndex + 1) % playableLength;
+            }
+            loadAndPlayTrack();
+        }
+        function playPrev() {
+            const playableLength = isHiddenTrackUnlocked ? tracks.length : tracks.length - 1;
+            if (isShuffle) {
+                currentTrackIndex = Math.floor(Math.random() * playableLength);
+            } else {
+                currentTrackIndex = (currentTrackIndex - 1 + playableLength) % playableLength;
+            }
+            loadAndPlayTrack();
+        }
+        btnNext.addEventListener('click', playNext);
+        btnPrev.addEventListener('click', playPrev);
+
+        // Progress Bar
+        audios.bg.addEventListener('timeupdate', () => {
+            if (!isNaN(audios.bg.duration)) {
+                let current = audios.bg.currentTime;
+                let duration = audios.bg.duration;
+                progressBar.value = (current / duration) * 100;
+                timeUI.textContent = formatTime(current) + " / " + formatTime(duration);
+            }
+        });
+        audios.bg.addEventListener('loadedmetadata', () => {
+            timeUI.textContent = "00:00 / " + formatTime(audios.bg.duration);
+        });
+        progressBar.addEventListener('input', () => {
+            let duration = audios.bg.duration;
+            audios.bg.currentTime = (progressBar.value / 100) * duration;
+        });
+
+        // Khi bài hát kết thúc
+        audios.bg.addEventListener('ended', () => {
+            if (repeatMode === 2) {
+                audios.bg.currentTime = 0;
+                audios.bg.play(); // Lặp 1 bài
+            } else if (repeatMode === 1) {
+                playNext(); // Lặp cả list
+            } else {
+                // Không lặp, nếu hết list thì dừng, chưa hết thì Next
+                const playableLength = isHiddenTrackUnlocked ? tracks.length : tracks.length - 1;
+                if (currentTrackIndex < playableLength - 1) playNext();
+                else {
+                    iconPlay.style.display = 'block';
+                    iconPause.style.display = 'none';
+                }
+            }
+        });
+
+        // Nút Trộn Bài (Shuffle)
+        btnShuffle.addEventListener('click', () => {
+            isShuffle = !isShuffle;
+            btnShuffle.classList.toggle('active', isShuffle);
+        });
+
+        // Nút Lặp Lại (Repeat: Tắt -> Tất cả -> 1 bài)
+        btnRepeat.addEventListener('click', () => {
+            repeatMode = (repeatMode + 1) % 3;
+            if (repeatMode === 0) {
+                btnRepeat.classList.remove('active');
+                btnRepeat.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>';
+            } else if (repeatMode === 1) {
+                btnRepeat.classList.add('active');
+                btnRepeat.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>';
+            } else if (repeatMode === 2) {
+                btnRepeat.classList.add('active');
+                btnRepeat.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path><text x="12" y="16" font-size="8" font-family="sans-serif" text-anchor="middle" fill="currentColor">1</text></svg>';
+            }
+        });
+
+        // ── AUTOPLAY ÂM THANH (hook vào video muted) ─────────────────
+                const startScreen = document.getElementById('start-screen');
+        startScreen.addEventListener('click', () => {
+            startScreen.classList.add('hidden');
+            vids.intro.play();
+            vids.introAmbient.play();
+            audios.intro.play().catch(() => {});
+        });
+
+        // ── INTRO KẾT THÚC → BẬT HIỆU ỨNG FROZEN ────────────────────
+        vids.intro.addEventListener('ended', () => {
+            isIntroFinished = true;
+            vids.introAmbient.loop = true;
+            scenes.intro.style.cursor = "url('content/cursor/genshin_link.cur'), pointer";
+
+            // 1. Breathing glow quanh video
+            introWrapper.classList.add('frozen');
+
+            // 2. Vignette fade in
+            vignette.classList.add('visible');
+
+            // 3. Particles bay lên
+            particlesCanvas.classList.add('visible');
+            resizeCanvas();
+            initParticles();
+            requestAnimationFrame(animateParticles);
+        });
+
+        let isDoorFinished = false;
+        const doorWrapper = document.getElementById('door-wrapper');
+
+        // ── CLICK → CHUYỂN SANG CỬA ───────────────────────────────────
+        scenes.intro.addEventListener('click', () => {
+            if (!isIntroFinished) return;
+
+            // Chuyển hiệu ứng viền sáng sang cửa, GIỮ NGUYÊN particles và vignette
+            introWrapper.classList.remove('frozen');
+            doorWrapper.classList.add('frozen');
+            
+            audios.intro.pause();
+
+            switchScene(scenes.intro, scenes.door);
+            vids.door.play();
+            vids.doorAmbient.play();
+            audios.door.play();
+        });
+
+        // ── VIDEO CỬA KẾT THÚC → TỰ ĐỘNG CHUYỂN SANG WEB CHÍNH ────────────
+        vids.door.addEventListener('ended', () => {
+            // Tắt hiệu ứng
+            particlesRunning = false;
+            vignette.classList.remove('visible');
+            particlesCanvas.classList.remove('visible');
+            doorWrapper.classList.remove('frozen');
+
+            whiteFlash.classList.add('active');
+
+            setTimeout(() => {
+                switchScene(scenes.door, scenes.main);
+
+                // ── VIDEO LOOP: nhiều cơ chế để đảm bảo chạy mãi ──
+                const mainVid = document.getElementById('main-bg-vid');
+
+                function ensureVideoPlaying(v) {
+                    // 1. loop attr
+                    v.loop = true;
+                    // 2. Khi ended thì play lại thủ công (backup cho loop)
+                    v.addEventListener('ended', () => v.play().catch(() => {}));
+                    // 3. Nếu bị pause bởi browser thì play lại
+                    v.addEventListener('pause', () => {
+                        if (!v.ended) v.play().catch(() => {});
+                    });
+                    // 4. Khi tab active trở lại
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden && v.paused) v.play().catch(() => {});
+                    });
+                    v.play().catch(() => {});
+                    // 5. Kiểm tra định kỳ mỗi 1.5s - bảo hiểm cuối cùng
+                    setInterval(() => {
+                        if (v.paused || v.ended) v.play().catch(() => {});
+                    }, 1500);
+                }
+
+                ensureVideoPlaying(mainVid);
+                document.querySelectorAll('#main-scene .ambient-bg video').forEach(v => ensureVideoPlaying(v));
+
+                // Phát nhạc nền web chính
+                // Phát nhạc nền web chính thông qua Music Player
+                loadAndPlayTrack(true);
+
+                setTimeout(() => whiteFlash.classList.remove('active'), 500);
+            }, 1500);
+        });
+
+        // ── HELPER: FADE AUDIO ────────────────────────────────────────
+        function fadeAudio(audioEl, from, to, duration) {
+            audioEl.volume = from;
+            const steps = 60;
+            const interval = duration / steps;
+            const delta = (to - from) / steps;
+            let step = 0;
+            const timer = setInterval(() => {
+                step++;
+                audioEl.volume = Math.min(1, Math.max(0, from + delta * step));
+                if (step >= steps) clearInterval(timer);
+            }, interval);
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // PARTICLES SYSTEM - hạt bụi lấp lánh bay lên từ đáy video
+        // ─────────────────────────────────────────────────────────────
+        let particles = [];
+        let particlesRunning = false;
+
+        function resizeCanvas() {
+            particlesCanvas.width  = particlesCanvas.offsetWidth;
+            particlesCanvas.height = particlesCanvas.offsetHeight;
+        }
+
+        function initParticles() {
+            particlesRunning = true;
+            particles = [];
+            const count = 60;
+            for (let i = 0; i < count; i++) {
+                spawnParticle(true);
+            }
+        }
+
+        function spawnParticle(randomY = false) {
+            const w = particlesCanvas.width;
+            const h = particlesCanvas.height;
+            particles.push({
+                x:       Math.random() * w,
+                y:       randomY ? Math.random() * h : h + 4,
+                size:    Math.random() * 2.5 + 0.5,
+                speedY:  Math.random() * 0.6 + 0.2,
+                speedX:  (Math.random() - 0.5) * 0.4,
+                alpha:   Math.random() * 0.6 + 0.2,
+                // Màu pixel art: trắng hoặc xanh cyan nhẹ
+                hue:     Math.random() > 0.6 ? 185 : 0,
+                sat:     Math.random() > 0.6 ? 80 : 0,
+                twinkle: Math.random() * Math.PI * 2,
+            });
+        }
+
+        function animateParticles() {
+            if (!particlesRunning) { ctx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height); return; }
+            requestAnimationFrame(animateParticles);
+
+            ctx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.y -= p.speedY;
+                p.x += p.speedX;
+                p.twinkle += 0.05;
+                const alphaMod = p.alpha * (0.6 + 0.4 * Math.sin(p.twinkle));
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                if (p.sat > 0) {
+                    ctx.fillStyle = `hsla(${p.hue}, ${p.sat}%, 80%, ${alphaMod})`;
+                } else {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alphaMod})`;
+                }
+                ctx.fill();
+
+                // Xóa hạt đã bay ra ngoài, sinh hạt mới
+                if (p.y < -5) {
+                    particles.splice(i, 1);
+                    spawnParticle(false);
+                }
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // ═══════════════════════════════════════════════════════
+        // SHARED FX CANVAS - click burst + mouse trail dùng chung 1 canvas
+        // ═══════════════════════════════════════════════════════
+        const fxCanvas = document.createElement('canvas');
+        fxCanvas.style.cssText = `
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 99998;
+        `;
+        document.body.appendChild(fxCanvas);
+        const fxCtx = fxCanvas.getContext('2d');
+
+        function resizeFxCanvas() {
+            fxCanvas.width  = window.innerWidth;
+            fxCanvas.height = window.innerHeight;
+        }
+        resizeFxCanvas();
+        window.addEventListener('resize', resizeFxCanvas);
+
+        // ─── CLICK BURST (Epic Seven Style - Vàng Xanh Trắng) ───────────
+        let clickBursts = [];
+
+        function spawnClickBurst(x, y) {
+            clickBursts.push({ 
+                type: 'epic7', 
+                x, y, 
+                r: 0, 
+                maxR: 35, // Vòng tròn nhỏ
+                life: 1.0, 
+                decay: 0.018, // Kéo dài thời gian hiệu ứng ~ gấp đôi
+                angle: Math.random() * Math.PI 
+            });
+        }
+
+        function updateClickBursts() {
+            for (let i = clickBursts.length - 1; i >= 0; i--) {
+                const p = clickBursts[i];
+                if (p.type === 'epic7') {
+                    p.r += (p.maxR - p.r) * 0.12; // Lan tỏa chậm lại một chút để khớp với thời gian
+                    p.life -= p.decay;
+                    p.angle += 0.02;
+                    
+                    const alpha = Math.max(0, p.life);
+                    const brightAlpha = Math.min(1, alpha * 1.5); // Giữ độ sáng cao lâu hơn
+                    
+                    // 1. Dư ảnh màu trắng rực rỡ bên trong (Inner Flash)
+                    const innerR = p.r * 0.95;
+                    if (innerR > 0) {
+                        fxCtx.beginPath();
+                        fxCtx.arc(p.x, p.y, innerR, 0, Math.PI * 2);
+                        const flashGrad = fxCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, innerR);
+                        flashGrad.addColorStop(0, `rgba(255, 255, 255, ${brightAlpha})`);
+                        flashGrad.addColorStop(0.6, `rgba(255, 255, 255, ${brightAlpha * 0.8})`);
+                        flashGrad.addColorStop(1, `rgba(255, 255, 255, 0)`);
+                        fxCtx.fillStyle = flashGrad;
+                        fxCtx.fill();
+                    }
+
+                    // 2. Vòng tròn viền ngoài sáng rực
+                    fxCtx.beginPath();
+                    fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    fxCtx.strokeStyle = `rgba(255, 255, 255, ${brightAlpha})`;
+                    fxCtx.lineWidth = 1.5 + alpha * 3;
+                    fxCtx.shadowBlur = 15 + alpha * 10; // Tăng cường độ phát sáng
+                    fxCtx.shadowColor = `rgba(173, 255, 47, ${brightAlpha})`;
+                    fxCtx.stroke();
+                    fxCtx.shadowBlur = 0;
+                    
+                    // 3. Ngôi sao 4 cánh (Glow) ở giữa sáng hơn
+                    const starSize = p.maxR * (1 - alpha) * 0.8 + 20; 
+                    
+                    fxCtx.save();
+                    fxCtx.translate(p.x, p.y);
+                    fxCtx.rotate(p.angle);
+                    
+                    fxCtx.beginPath();
+                    const spikes = 4;
+                    const innerRadius = starSize * 0.15;
+                    for (let j = 0; j < spikes * 2; j++) {
+                        const r = (j % 2 === 0) ? starSize : innerRadius;
+                        const a = (Math.PI / spikes) * j;
+                        fxCtx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+                    }
+                    fxCtx.closePath();
+                    
+                    const grad = fxCtx.createRadialGradient(0, 0, 0, 0, 0, starSize);
+                    grad.addColorStop(0, `rgba(255, 255, 255, ${brightAlpha})`);
+                    grad.addColorStop(0.4, `rgba(215, 255, 100, ${brightAlpha})`);
+                    grad.addColorStop(0.8, `rgba(130, 255, 50, ${alpha * 0.8})`);
+                    grad.addColorStop(1, `rgba(50, 200, 100, 0)`);
+                    
+                    fxCtx.fillStyle = grad;
+                    fxCtx.fill();
+                    fxCtx.restore();
+                    
+                    if (p.life <= 0) clickBursts.splice(i, 1);
+                }
+            }
+        }
+
+        function playRandomClickSound() {
+            // No global mute check anymore
+            const r = Math.floor(Math.random() * 5) + 1;
+            const snd = new Audio(`content/cursorsound${r}.m4a`);
+            snd.volume = 0.6;
+            snd.play().catch(() => {});
+        }
+
+        document.addEventListener('click', (e) => {
+            spawnClickBurst(e.clientX, e.clientY);
+            playRandomClickSound();
+        });
+
+        // ─── MOUSE TRAIL - đường thẳng từ ĐUÔI cursor (rocket exhaust) ──
+        // Điểm trail được spawn NGƯỢC hướng di chuyển 12px → trail luôn
+        // nằm phía sau cursor, không tại mũi. Vẽ dạng đường như cũ.
+        const TRAIL_LEN = 22;
+        let mouseTrail = [];
+        let prevMx = 0, prevMy = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            // Loại bỏ offset tính bằng vận tốc (tránh glitch/nhảy góc)
+            // Ghi nhận trực tiếp tọa độ con trỏ chuột
+            mouseTrail.push({ x: e.clientX, y: e.clientY, age: 1.0 });
+            if (mouseTrail.length > TRAIL_LEN) mouseTrail.shift();
+        });
+
+        function updateMouseTrail() {
+            for (let p of mouseTrail) p.age -= 0.055;
+            mouseTrail = mouseTrail.filter(p => p.age > 0);
+            if (mouseTrail.length < 2) return;
+
+            for (let i = 0; i < mouseTrail.length - 1; i++) {
+                // t=0: điểm cũ nhất (đuôi xa) → t=1: điểm mới nhất (chính xác tại mũi cursor)
+                const t  = i / (mouseTrail.length - 1);
+                const p0 = mouseTrail[i];
+                const p1 = mouseTrail[i + 1];
+
+                // Dùng đường cong hình chuông (bell curve):
+                // Mũi (t=1): bell ~ 0 → mỏng & trong suốt (cảm giác xuất phát TỪ ĐUÔI mũi)
+                // Giữa (t=0.6): bell ~ 1 → to nhất, sáng nhất (lõi lửa)
+                // Đuôi (t=0): bell = 0 → mỏng dần, mờ đi
+                const bell = Math.sin(Math.pow(t, 0.8) * Math.PI);
+
+                const w     = bell * 6 + 0.3;
+                const lig   = 40 + bell * 35;
+                const alpha = p0.age * (bell * 0.9 + 0.1);
+
+                fxCtx.beginPath();
+                fxCtx.moveTo(p0.x, p0.y);
+                fxCtx.lineTo(p1.x, p1.y);
+                fxCtx.strokeStyle = `hsla(168, 95%, ${lig}%, ${alpha})`;
+                fxCtx.lineWidth   = w;
+                fxCtx.lineCap     = 'round';
+                fxCtx.shadowBlur  = bell * 14;
+                fxCtx.shadowColor = 'hsl(168, 100%, 70%)';
+                fxCtx.stroke();
+                fxCtx.shadowBlur  = 0;
+            }
+        }
+
+        // ─── MAIN FX LOOP ──────────────────────────────────────────────
+        function fxLoop() {
+            requestAnimationFrame(fxLoop);
+            fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+            updateMouseTrail();
+            updateClickBursts();
+        }
+        fxLoop();
+
+        // ── INIT DANDELIONS ───────────────────────────────────
+        function initDandelions() {
+            const container = document.getElementById('dandelion-container');
+            if (!container) return;
+            const seedCount = 25;
+            for (let i = 0; i < seedCount; i++) {
+                const seed = document.createElement('div');
+                seed.classList.add('dandelion-seed');
+                
+                const leftPos = Math.random() * 100;
+                const animDuration = 12 + Math.random() * 15;
+                const animDelay = Math.random() * 20;
+                const drift = (Math.random() - 0.5) * 2;
+                const scale = 0.5 + Math.random() * 0.8;
+                
+                seed.style.left = `${leftPos}%`;
+                seed.style.animationDuration = `${animDuration}s`;
+                seed.style.animationDelay = `-${animDelay}s`;
+                seed.style.setProperty('--drift', drift);
+                seed.style.setProperty('--scale', scale);
+                
+                container.appendChild(seed);
+            }
+        }
+        initDandelions();
+
+
+        // Certificate Modal Logic
+        const certModal = document.getElementById('cert-modal');
+        const certModalImg = document.getElementById('cert-modal-img');
+        const certModalClose = document.querySelector('.cert-modal-close');
+        certModalImg.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!certModalImg.classList.contains('zoomed')) {
+                const rect = certModalImg.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                certModalImg.style.transformOrigin = `${x}% ${y}%`;
+                certModalImg.classList.add('zoomed');
+            } else {
+                certModalImg.classList.remove('zoomed');
+                setTimeout(() => { certModalImg.style.transformOrigin = 'center'; }, 300);
+            }
+        });
+
+        
+        document.querySelectorAll('.award-item.cert').forEach(item => {
+            item.addEventListener('click', () => {
+                const imgSrc = item.getAttribute('data-img');
+                if (imgSrc) {
+                    certModalImg.src = imgSrc;
+                    certModal.classList.add('active');
+                }
+            });
+        });
+
+        certModalClose.addEventListener('click', () => {
+            certModal.classList.remove('active');
+            certModalImg.classList.remove('zoomed');
+            setTimeout(() => { certModalImg.src = ''; }, 300);
+        });
+
+        certModal.addEventListener('click', (e) => {
+            if (e.target === certModal) {
+                certModal.classList.remove('active');
+                certModalImg.classList.remove('zoomed');
+                setTimeout(() => { certModalImg.src = ''; }, 300);
+            }
+        });
+    </script>
+</body>
+</html>
