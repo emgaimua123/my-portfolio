@@ -79,6 +79,27 @@
             width: 100%; height: 100%;
             background-color: #000;
             overflow: hidden;
+
+        @font-face {
+            font-family: 'Genshin Impact DRIP FONT';
+            src: url('content/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT.ttf') format('truetype'),
+                 url('content/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'HYWenHei-85W';
+            src: url('content/hywenhei/zhcn.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: #000;
+            overflow: hidden;
             font-family: 'HYWenHei-85W', 'Inter', sans-serif;
             user-select: none;
             /* Custom Genshin cursor */
@@ -86,6 +107,13 @@
         }
         a, button, [role="button"], .contact-card, .genshin-card, .nav-links a, .award-item, .timeline-card {
             cursor: url('content/cursor/genshin_link.cur'), pointer;
+        }
+        
+        /* Reset cursor for touch devices */
+        @media screen and (hover: none) and (pointer: coarse) {
+            * {
+                cursor: auto !important;
+            }
         }
         
         h1, h2, h3, .section-title, .hero-title, .hero-subtitle, .award-title, .timeline-title, .card-title, .player-title {
@@ -2532,7 +2560,7 @@
             }
         });
 
-        const btnToggleTracklist = document.getElementById('btn-toggle-tracklist');
+        const btnToggleTracklist = document.getElementById('btn-tracklist-menu');
         btnToggleTracklist.addEventListener('click', () => {
             tracklistContainer.classList.toggle('open');
             musicBackdrop.classList.toggle('active');
@@ -2654,305 +2682,6 @@
             vids.intro.play();
             vids.introAmbient.play();
             audios.intro.play().catch(() => {});
-        });
-
-        // ── INTRO KẾT THÚC → BẬT HIỆU ỨNG FROZEN ────────────────────
-        vids.intro.addEventListener('ended', () => {
-            isIntroFinished = true;
-            vids.introAmbient.loop = true;
-            scenes.intro.style.cursor = "url('content/cursor/genshin_link.cur'), pointer";
-
-            // 1. Breathing glow quanh video
-            introWrapper.classList.add('frozen');
-
-            // 2. Vignette fade in
-            vignette.classList.add('visible');
-
-            // 3. Particles bay lên
-            particlesCanvas.classList.add('visible');
-            resizeCanvas();
-            initParticles();
-            requestAnimationFrame(animateParticles);
-        });
-
-        let isDoorFinished = false;
-        const doorWrapper = document.getElementById('door-wrapper');
-
-        // ── CLICK → CHUYỂN SANG CỬA ───────────────────────────────────
-        scenes.intro.addEventListener('click', () => {
-            if (!isIntroFinished) return;
-
-            // Chuyển hiệu ứng viền sáng sang cửa, GIỮ NGUYÊN particles và vignette
-            introWrapper.classList.remove('frozen');
-            doorWrapper.classList.add('frozen');
-            
-            audios.intro.pause();
-
-            switchScene(scenes.intro, scenes.door);
-            vids.door.play();
-            vids.doorAmbient.play();
-            audios.door.play();
-        });
-
-        // ── VIDEO CỬA KẾT THÚC → TỰ ĐỘNG CHUYỂN SANG WEB CHÍNH ────────────
-        vids.door.addEventListener('ended', () => {
-            // Tắt hiệu ứng
-            particlesRunning = false;
-            vignette.classList.remove('visible');
-            particlesCanvas.classList.remove('visible');
-            doorWrapper.classList.remove('frozen');
-
-            whiteFlash.classList.add('active');
-
-            setTimeout(() => {
-                switchScene(scenes.door, scenes.main);
-
-                // ── VIDEO LOOP: nhiều cơ chế để đảm bảo chạy mãi ──
-                const mainVid = document.getElementById('main-bg-vid');
-
-                function ensureVideoPlaying(v) {
-                    // 1. loop attr
-                    v.loop = true;
-                    // 2. Khi ended thì play lại thủ công (backup cho loop)
-                    v.addEventListener('ended', () => v.play().catch(() => {}));
-                    // 3. Nếu bị pause bởi browser thì play lại
-                    v.addEventListener('pause', () => {
-                        if (!v.ended) v.play().catch(() => {});
-                    });
-                    // 4. Khi tab active trở lại
-                    document.addEventListener('visibilitychange', () => {
-                        if (!document.hidden && v.paused) v.play().catch(() => {});
-                    });
-                    v.play().catch(() => {});
-                    // 5. Kiểm tra định kỳ mỗi 1.5s - bảo hiểm cuối cùng
-                    setInterval(() => {
-                        if (v.paused || v.ended) v.play().catch(() => {});
-                    }, 1500);
-                }
-
-                ensureVideoPlaying(mainVid);
-                document.querySelectorAll('#main-scene .ambient-bg video').forEach(v => ensureVideoPlaying(v));
-
-                // Phát nhạc nền web chính
-                // Phát nhạc nền web chính thông qua Music Player
-                loadAndPlayTrack(true);
-
-                setTimeout(() => whiteFlash.classList.remove('active'), 500);
-            }, 1500);
-        });
-
-        // ── HELPER: FADE AUDIO ────────────────────────────────────────
-        function fadeAudio(audioEl, from, to, duration) {
-            audioEl.volume = from;
-            const steps = 60;
-            const interval = duration / steps;
-            const delta = (to - from) / steps;
-            let step = 0;
-            const timer = setInterval(() => {
-                step++;
-                audioEl.volume = Math.min(1, Math.max(0, from + delta * step));
-                if (step >= steps) clearInterval(timer);
-            }, interval);
-        }
-
-        // ─────────────────────────────────────────────────────────────
-        // PARTICLES SYSTEM - hạt bụi lấp lánh bay lên từ đáy video
-        // ─────────────────────────────────────────────────────────────
-        let particles = [];
-        let particlesRunning = false;
-
-        function resizeCanvas() {
-            particlesCanvas.width  = particlesCanvas.offsetWidth;
-            particlesCanvas.height = particlesCanvas.offsetHeight;
-        }
-
-        function initParticles() {
-            particlesRunning = true;
-            particles = [];
-            const count = 60;
-            for (let i = 0; i < count; i++) {
-                spawnParticle(true);
-            }
-        }
-
-        function spawnParticle(randomY = false) {
-            const w = particlesCanvas.width;
-            const h = particlesCanvas.height;
-            particles.push({
-                x:       Math.random() * w,
-                y:       randomY ? Math.random() * h : h + 4,
-                size:    Math.random() * 2.5 + 0.5,
-                speedY:  Math.random() * 0.6 + 0.2,
-                speedX:  (Math.random() - 0.5) * 0.4,
-                alpha:   Math.random() * 0.6 + 0.2,
-                // Màu pixel art: trắng hoặc xanh cyan nhẹ
-                hue:     Math.random() > 0.6 ? 185 : 0,
-                sat:     Math.random() > 0.6 ? 80 : 0,
-                twinkle: Math.random() * Math.PI * 2,
-            });
-        }
-
-        function animateParticles() {
-            if (!particlesRunning) { ctx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height); return; }
-            requestAnimationFrame(animateParticles);
-
-            ctx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                p.y -= p.speedY;
-                p.x += p.speedX;
-                p.twinkle += 0.05;
-                const alphaMod = p.alpha * (0.6 + 0.4 * Math.sin(p.twinkle));
-
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                if (p.sat > 0) {
-                    ctx.fillStyle = `hsla(${p.hue}, ${p.sat}%, 80%, ${alphaMod})`;
-                } else {
-                    ctx.fillStyle = `rgba(255, 255, 255, ${alphaMod})`;
-                }
-                ctx.fill();
-
-                // Xóa hạt đã bay ra ngoài, sinh hạt mới
-                if (p.y < -5) {
-                    particles.splice(i, 1);
-                    spawnParticle(false);
-                }
-            }
-        }
-
-        window.addEventListener('resize', resizeCanvas);
-
-        // ═══════════════════════════════════════════════════════
-        // SHARED FX CANVAS - click burst + mouse trail dùng chung 1 canvas
-        // ═══════════════════════════════════════════════════════
-        const fxCanvas = document.createElement('canvas');
-        fxCanvas.style.cssText = `
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 99998;
-        `;
-        document.body.appendChild(fxCanvas);
-        const fxCtx = fxCanvas.getContext('2d');
-
-        function resizeFxCanvas() {
-            fxCanvas.width  = window.innerWidth;
-            fxCanvas.height = window.innerHeight;
-        }
-        resizeFxCanvas();
-        window.addEventListener('resize', resizeFxCanvas);
-
-        // ─── CLICK BURST (Epic Seven Style - Vàng Xanh Trắng) ───────────
-        let clickBursts = [];
-
-        function spawnClickBurst(x, y) {
-            clickBursts.push({ 
-                type: 'epic7', 
-                x, y, 
-                r: 0, 
-                maxR: 35, // Vòng tròn nhỏ
-                life: 1.0, 
-                decay: 0.018, // Kéo dài thời gian hiệu ứng ~ gấp đôi
-                angle: Math.random() * Math.PI 
-            });
-        }
-
-        function updateClickBursts() {
-            for (let i = clickBursts.length - 1; i >= 0; i--) {
-                const p = clickBursts[i];
-                if (p.type === 'epic7') {
-                    p.r += (p.maxR - p.r) * 0.12; // Lan tỏa chậm lại một chút để khớp với thời gian
-                    p.life -= p.decay;
-                    p.angle += 0.02;
-                    
-                    const alpha = Math.max(0, p.life);
-                    const brightAlpha = Math.min(1, alpha * 1.5); // Giữ độ sáng cao lâu hơn
-                    
-                    // 1. Dư ảnh màu trắng rực rỡ bên trong (Inner Flash)
-                    const innerR = p.r * 0.95;
-                    if (innerR > 0) {
-                        fxCtx.beginPath();
-                        fxCtx.arc(p.x, p.y, innerR, 0, Math.PI * 2);
-                        const flashGrad = fxCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, innerR);
-                        flashGrad.addColorStop(0, `rgba(255, 255, 255, ${brightAlpha})`);
-                        flashGrad.addColorStop(0.6, `rgba(255, 255, 255, ${brightAlpha * 0.8})`);
-                        flashGrad.addColorStop(1, `rgba(255, 255, 255, 0)`);
-                        fxCtx.fillStyle = flashGrad;
-                        fxCtx.fill();
-                    }
-
-                    // 2. Vòng tròn viền ngoài sáng rực
-                    fxCtx.beginPath();
-                    fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-                    fxCtx.strokeStyle = `rgba(255, 255, 255, ${brightAlpha})`;
-                    fxCtx.lineWidth = 1.5 + alpha * 3;
-                    fxCtx.shadowBlur = 15 + alpha * 10; // Tăng cường độ phát sáng
-                    fxCtx.shadowColor = `rgba(173, 255, 47, ${brightAlpha})`;
-                    fxCtx.stroke();
-                    fxCtx.shadowBlur = 0;
-                    
-                    // 3. Ngôi sao 4 cánh (Glow) ở giữa sáng hơn
-                    const starSize = p.maxR * (1 - alpha) * 0.8 + 20; 
-                    
-                    fxCtx.save();
-                    fxCtx.translate(p.x, p.y);
-                    fxCtx.rotate(p.angle);
-                    
-                    fxCtx.beginPath();
-                    const spikes = 4;
-                    const innerRadius = starSize * 0.15;
-                    for (let j = 0; j < spikes * 2; j++) {
-                        const r = (j % 2 === 0) ? starSize : innerRadius;
-                        const a = (Math.PI / spikes) * j;
-                        fxCtx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-                    }
-                    fxCtx.closePath();
-                    
-                    const grad = fxCtx.createRadialGradient(0, 0, 0, 0, 0, starSize);
-                    grad.addColorStop(0, `rgba(255, 255, 255, ${brightAlpha})`);
-                    grad.addColorStop(0.4, `rgba(215, 255, 100, ${brightAlpha})`);
-                    grad.addColorStop(0.8, `rgba(130, 255, 50, ${alpha * 0.8})`);
-                    grad.addColorStop(1, `rgba(50, 200, 100, 0)`);
-                    
-                    fxCtx.fillStyle = grad;
-                    fxCtx.fill();
-                    fxCtx.restore();
-                    
-                    if (p.life <= 0) clickBursts.splice(i, 1);
-                }
-            }
-        }
-
-        function playRandomClickSound() {
-            // No global mute check anymore
-            const r = Math.floor(Math.random() * 5) + 1;
-            const snd = new Audio(`content/cursorsound${r}.m4a`);
-            snd.volume = 0.6;
-            snd.play().catch(() => {});
-        }
-
-        document.addEventListener('click', (e) => {
-            spawnClickBurst(e.clientX, e.clientY);
-            playRandomClickSound();
-        });
-
-        // ─── MOUSE TRAIL - đường thẳng từ ĐUÔI cursor (rocket exhaust) ──
-        // Điểm trail được spawn NGƯỢC hướng di chuyển 12px → trail luôn
-        // nằm phía sau cursor, không tại mũi. Vẽ dạng đường như cũ.
-        const TRAIL_LEN = 22;
-        let mouseTrail = [];
-        let prevMx = 0, prevMy = 0;
-
-        document.addEventListener('mousemove', (e) => {
-            // Loại bỏ offset tính bằng vận tốc (tránh glitch/nhảy góc)
-            // Ghi nhận trực tiếp tọa độ con trỏ chuột
-            mouseTrail.push({ x: e.clientX, y: e.clientY, age: 1.0 });
-            if (mouseTrail.length > TRAIL_LEN) mouseTrail.shift();
-        });
-
-        function updateMouseTrail() {
             for (let p of mouseTrail) p.age -= 0.055;
             mouseTrail = mouseTrail.filter(p => p.age > 0);
             if (mouseTrail.length < 2) return;
