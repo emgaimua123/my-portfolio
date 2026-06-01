@@ -6,6 +6,59 @@
     <title>Portfolio Experience</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
+        /* --- ROTATE DEVICE OVERLAY --- */
+        #rotate-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #0f1928;
+            color: var(--text-bright);
+            z-index: 100000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        .rotate-content {
+            border: 2px solid var(--anemo);
+            padding: 40px;
+            border-radius: 12px;
+            background: rgba(20, 30, 50, 0.95);
+            box-shadow: 0 0 30px var(--anemo-glow);
+            max-width: 80%;
+        }
+        .rotate-icon {
+            display: inline-block;
+            font-size: 4rem;
+            color: var(--anemo);
+            margin-bottom: 15px;
+            animation: rotate-phone 2s infinite ease-in-out;
+        }
+        @keyframes rotate-phone {
+            0% { transform: rotate(-90deg); }
+            50% { transform: rotate(0deg); }
+            100% { transform: rotate(-90deg); }
+        }
+        #rotate-overlay h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            font-family: 'Genshin', sans-serif;
+            color: var(--gold-bright);
+        }
+        #rotate-overlay p {
+            font-size: 1rem;
+            color: #e0e0e0;
+            line-height: 1.5;
+        }
+
+        /* Detect Portrait Mode */
+        @media screen and (max-width: 1024px) and (orientation: portrait) {
+            #rotate-overlay {
+                display: flex !important;
+            }
+        }
+
         @font-face {
             font-family: 'Genshin Impact DRIP FONT';
             src: url('content/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT.ttf') format('truetype'),
@@ -1503,6 +1556,15 @@
     </style>
 </head>
 <body>
+    <!-- ROTATE DEVICE OVERLAY -->
+    <div id="rotate-overlay">
+        <div class="rotate-content">
+            <span class="rotate-icon">&#10227;</span>
+            <h2>Vui l&ograve;ng xoay ngang thi&#7871;t b&#7883;</h2>
+            <p>Trang web &#273;&#432;&#7907;c thi&#7871;t k&#7871; t&#7889;i &#432;u nh&#7845;t cho ch&#7871; &#273;&#7897; xoay ngang (Landscape).<br>H&atilde;y xoay ngang &#273;i&#7879;n tho&#7841;i ho&#7863;c m&aacute;y t&iacute;nh b&#7843;ng c&#7911;a b&#7841;n &#273;&#7875; ti&#7871;p t&#7909;c.</p>
+        </div>
+    </div>
+
     <!-- START SCREEN -->
     <div id="start-screen" class="start-screen">
         <img class="start-bg-img" src="intro/waitingscreenbg.jpg" alt="Waiting Screen Background">
