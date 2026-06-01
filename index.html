@@ -2278,6 +2278,14 @@
             document.querySelectorAll('.local-tutorial-overlay').forEach(el => el.remove());
             const globalOverlay = document.getElementById('tutorial-overlay');
             if(globalOverlay) globalOverlay.classList.add('hidden');
+            
+            // Clean up any interaction popups that might have been opened during tutorial
+            const md = document.querySelector('.music-dropdown');
+            if (md) md.classList.add('hidden');
+            const mb = document.getElementById('music-backdrop');
+            if (mb) mb.classList.remove('active');
+            const certModal = document.getElementById('cert-modal');
+            if (certModal) certModal.classList.add('hidden');
         }
         
         function highlightTutorialStep(stepIndex) {
