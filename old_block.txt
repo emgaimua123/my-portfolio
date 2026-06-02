@@ -1,0 +1,172 @@
+        // SHARED FX CANVAS - click burst + mouse trail dùng chung 1 canvas
+        // ═══════════════════════════════════════════════════════
+        const fxCanvas = document.createElement('canvas');
+        fxCanvas.style.cssText = `
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 99998;
+        `;
+        document.body.appendChild(fxCanvas);
+        const fxCtx = fxCanvas.getContext('2d');
+
+        function resizeFxCanvas() {
+            fxCanvas.width  = window.innerWidth;
+            fxCanvas.height = window.innerHeight;
+        }
+        resizeFxCanvas();
+        window.addEventListener('resize', resizeFxCanvas);
+
+        // ─── CLICK BURST (Epic Seven Style - Vàng Xanh Trắng) ───────────
+        let clickBursts = [];
+
+        function spawnClickBurst(x, y) {
+            clickBursts.push({ 
+                type: 'epic7', 
+                x, y, 
+                r: 0, 
+                maxR: 35, // Vòng tròn nhỏ
+                life: 1.0, 
+                decay: 0.018, // Kéo dài thời gian hiệu ứng ~ gấp đôi
+                angle: Math.random() * Math.PI 
+            });
+        }
+
+        function updateClickBursts() {
+            for (let i = clickBursts.length - 1; i >= 0; i--) {
+                const p = clickBursts[i];
+                if (p.type === 'epic7') {
+                    p.r += (p.maxR - p.r) * 0.12; // Lan tỏa chậm lại một chút để khớp với thời gian
+                    p.life -= p.decay;
+                    p.angle += 0.02;
+                    
+                    const alpha = Math.max(0, p.life);
+                    const brightAlpha = Math.min(1, alpha * 1.5); // Giữ độ sáng cao lâu hơn
+                    
+                    // 1. Dư ảnh màu trắng rực rỡ bên trong (Inner Flash)
+                    const innerR = p.r * 0.95;
+                    if (innerR > 0) {
+                        fxCtx.beginPath();
+                        fxCtx.arc(p.x, p.y, innerR, 0, Math.PI * 2);
+                        const flashGrad = fxCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, innerR);
+                        flashGrad.addColorStop(0, `rgba(255, 255, 255, ${brightAlpha})`);
+                        flashGrad.addColorStop(0.6, `rgba(255, 255, 255, ${brightAlpha * 0.8})`);
+                        flashGrad.addColorStop(1, `rgba(255, 255, 255, 0)`);
+                        fxCtx.fillStyle = flashGrad;
+                        fxCtx.fill();
+                    }
+
+                    // 2. Vòng tròn viền ngoài sáng rực
+                    fxCtx.beginPath();
+                    fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    fxCtx.strokeStyle = `rgba(255, 255, 255, ${brightAlpha})`;
+                    fxCtx.lineWidth = 1.5 + alpha * 3;
+                    fxCtx.shadowBlur = 15 + alpha * 10; // Tăng cường độ phát sáng
+                    fxCtx.shadowColor = `rgba(173, 255, 47, ${brightAlpha})`;
+                    fxCtx.stroke();
+                    fxCtx.shadowBlur = 0;
+                    
+                    // 3. Ngôi sao 4 cánh (Glow) ở giữa sáng hơn
+                    const starSize = p.maxR * (1 - alpha) * 0.8 + 20; 
+                    
+                    fxCtx.save();
+                    fxCtx.translate(p.x, p.y);
+                    fxCtx.rotate(p.angle);
+                    
+                    fxCtx.beginPath();
+                    const spikes = 4;
+                    const innerRadius = starSize * 0.15;
+                    for (let j = 0; j < spikes * 2; j++) {
+                        const r = (j % 2 === 0) ? starSize : innerRadius;
+                        const a = (Math.PI / spikes) * j;
+                        fxCtx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+                    }
+                    fxCtx.closePath();
+                    
+                    const grad = fxCtx.createRadialGradient(0, 0, 0, 0, 0, starSize);
+                    grad.addColorStop(0, `rgba(255, 255, 255, ${brightAlpha})`);
+                    grad.addColorStop(0.4, `rgba(215, 255, 100, ${brightAlpha})`);
+                    grad.addColorStop(0.8, `rgba(130, 255, 50, ${alpha * 0.8})`);
+                    grad.addColorStop(1, `rgba(50, 200, 100, 0)`);
+                    
+                    fxCtx.fillStyle = grad;
+                    fxCtx.fill();
+                    fxCtx.restore();
+                    
+                    if (p.life <= 0) clickBursts.splice(i, 1);
+                }
+            }
+        }
+
+        function playRandomClickSound() {
+            // No global mute check anymore
+            const r = Math.floor(Math.random() * 5) + 1;
+            const snd = new Audio(`content/cursorsound${r}.m4a`);
+            snd.volume = 0.6;
+            snd.play().catch(() => {});
+        }
+
+        document.addEventListener('click', (e) => {
+            spawnClickBurst(e.clientX, e.clientY);
+            playRandomClickSound();
+        });
+
+        // ─── MOUSE TRAIL - đường thẳng từ ĐUÔI cursor (rocket exhaust) ──
+        // Điểm trail được spawn NGƯỢC hướng di chuyển 12px → trail luôn
+        // nằm phía sau cursor, không tại mũi. Vẽ dạng đường như cũ.
+        const TRAIL_LEN = 22;
+        let mouseTrail = [];
+        let prevMx = 0, prevMy = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            // Loại bỏ offset tính bằng vận tốc (tránh glitch/nhảy góc)
+            // Ghi nhận trực tiếp tọa độ con trỏ chuột
+            mouseTrail.push({ x: e.clientX, y: e.clientY, age: 1.0 });
+            if (mouseTrail.length > TRAIL_LEN) mouseTrail.shift();
+        });
+
+        function updateMouseTrail() {
+            for (let p of mouseTrail) p.age -= 0.055;
+            mouseTrail = mouseTrail.filter(p => p.age > 0);
+            if (mouseTrail.length < 2) return;
+
+            for (let i = 0; i < mouseTrail.length - 1; i++) {
+                // t=0: điểm cũ nhất (đuôi xa) → t=1: điểm mới nhất (chính xác tại mũi cursor)
+                const t  = i / (mouseTrail.length - 1);
+                const p0 = mouseTrail[i];
+                const p1 = mouseTrail[i + 1];
+
+                // Dùng đường cong hình chuông (bell curve):
+                // Mũi (t=1): bell ~ 0 → mỏng & trong suốt (cảm giác xuất phát TỪ ĐUÔI mũi)
+                // Giữa (t=0.6): bell ~ 1 → to nhất, sáng nhất (lõi lửa)
+                // Đuôi (t=0): bell = 0 → mỏng dần, mờ đi
+                const bell = Math.sin(Math.pow(t, 0.8) * Math.PI);
+
+                const w     = bell * 6 + 0.3;
+                const lig   = 40 + bell * 35;
+                const alpha = p0.age * (bell * 0.9 + 0.1);
+
+                fxCtx.beginPath();
+                fxCtx.moveTo(p0.x, p0.y);
+                fxCtx.lineTo(p1.x, p1.y);
+                fxCtx.strokeStyle = `hsla(168, 95%, ${lig}%, ${alpha})`;
+                fxCtx.lineWidth   = w;
+                fxCtx.lineCap     = 'round';
+                fxCtx.shadowBlur  = bell * 14;
+                fxCtx.shadowColor = 'hsl(168, 100%, 70%)';
+                fxCtx.stroke();
+                fxCtx.shadowBlur  = 0;
+            }
+        }
+
+        // ─── MAIN FX LOOP ──────────────────────────────────────────────
+        function fxLoop() {
+            requestAnimationFrame(fxLoop);
+            fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+            updateMouseTrail();
+            updateClickBursts();
+        }
+        fxLoop();
+
+        // ── INIT DANDELIONS ───────────────────────────────────
+        function initDandelions() {

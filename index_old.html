@@ -68,14 +68,6 @@
         }
 
         @font-face {
-            font-family: 'Genshin Impact DRIP FONT';
-            src: url('content/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT.ttf') format('truetype'),
-                 url('content/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT/Genshin Impact DRIP FONT.otf') format('opentype');
-            font-weight: normal;
-            font-style: normal;
-        }
-
-        @font-face {
             font-family: 'HYWenHei-85W';
             src: url('content/hywenhei/zhcn.ttf') format('truetype');
             font-weight: normal;
@@ -94,13 +86,6 @@
         }
         a, button, [role="button"], .contact-card, .genshin-card, .nav-links a, .award-item, .timeline-card {
             cursor: url('content/cursor/genshin_link.cur'), pointer;
-        }
-        
-        /* Reset cursor for touch devices */
-        @media screen and (hover: none) and (pointer: coarse) {
-            * {
-                cursor: auto !important;
-            }
         }
         
         h1, h2, h3, .section-title, .hero-title, .hero-subtitle, .award-title, .timeline-title, .card-title, .player-title {
@@ -140,28 +125,7 @@
             z-index: 20;
         }
 
-        
-        /* Dòng chữ "CLICK TO ENTER" */
-        #intro-prompt {
-            position: absolute;
-            bottom: 10%;
-            color: white;
-            font-size: 1rem;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            opacity: 0;
-            transition: opacity 1s;
-            z-index: 40;
-            text-shadow: 0 2px 12px rgba(0,0,0,0.9);
-            pointer-events: none;
-            animation: pulse 2s infinite;
-        }
-                @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.8; }
-        }
-/* =====================================================
+        /* =====================================================
            AMBIENT BACKGROUND - lấp đầy black bars
         ====================================================== */
         .ambient-bg {
@@ -881,7 +845,7 @@
             background: transparent;
             border: none;
             color: #ff5555;
-            cursor: url('content/cursor/genshin_link.cur'), pointer;
+            cursor: pointer;
             padding: 4px;
             display: flex;
             align-items: center;
@@ -896,7 +860,7 @@
             background: transparent;
             border: none;
             color: var(--gold-bright);
-            cursor: url('content/cursor/genshin_link.cur'), pointer;
+            cursor: pointer;
             padding: 4px;
             display: flex;
             align-items: center;
@@ -1151,7 +1115,7 @@
         .paimon-avatar {
             width: 140px;
             height: auto;
-            cursor: url('content/cursor/genshin_link.cur'), pointer;
+            cursor: pointer;
             animation: float 3s ease-in-out infinite;
             filter: drop-shadow(0 4px 10px rgba(78, 201, 160, 0.4));
             transition: transform 0.2s, filter 0.2s;
@@ -1180,7 +1144,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: url('content/cursor/genshin_link.cur'), pointer;
+            cursor: pointer;
             transition: all 0.3s;
             margin-left: 10px;
         }
@@ -1226,7 +1190,7 @@
             background: transparent;
             border: none;
             color: var(--text-muted);
-            cursor: url('content/cursor/genshin_link.cur'), pointer;
+            cursor: pointer;
             font-size: 1.2rem;
             display: flex;
             align-items: center;
@@ -1387,7 +1351,7 @@
             right: 30px;
             color: white;
             font-size: 40px;
-            cursor: url('content/cursor/genshin_link.cur'), pointer;
+            cursor: pointer;
             text-shadow: 0 2px 10px rgba(0,0,0,0.5);
             transition: color 0.3s;
         }
@@ -1395,7 +1359,7 @@
             color: #ff5555;
         }
         .award-item.cert {
-            cursor: url('content/cursor/genshin_link.cur'), pointer;
+            cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             position: relative;
         }
@@ -1540,7 +1504,7 @@
             justify-content: center;
             align-items: center;
             transition: opacity 1s, visibility 1s;
-            cursor: url('content/cursor/genshin_link.cur'), pointer;
+            cursor: pointer;
             overflow: hidden;
         }
         .start-bg-img {
@@ -2238,12 +2202,6 @@
                 trackListUI.appendChild(li);
             });
         }
-        
-        if (tracks.length > 0) {
-            audios.bg.src = tracks[0].file;
-            titleUI.textContent = tracks[0].name;
-        }
-        
         renderTracklist();
 
         // Unlock Quest Trigger: Click vào content cụ thể
@@ -2372,7 +2330,7 @@
             { id: 'genshin-nav', text: 'This is the Navigation Bar. You can use it to quickly jump to different sections of the page!' },
             { id: 'music-btn', text: 'In the top right is the Music button. Click here to toggle the Media Player!' },
             { id: 'btn-toggle-tracklist', text: 'Inside the Media Player is the Menu button. Click it to open the Tracklist!', preAction: () => { const md = document.querySelector('.music-dropdown'); if (md) md.classList.remove('hidden'); } },
-            { id: 'paimon-toggle-btn', text: "In the top left is Paimon's icon. Click here to summon me or let me rest!", preAction: () => { const md = document.querySelector('.music-dropdown'); if (md) md.classList.add('hidden'); } },
+            { id: 'paimon-toggle-btn', text: "In the top left is Paimon's icon. Click here to summon me or let me rest!" },
             { id: 'paimon-avatar', text: "Finally, if you don't know what to explore next, just click on me and Paimon will give you a suggestion!" }
         ];
         
@@ -2698,76 +2656,29 @@
             audios.intro.play().catch(() => {});
         });
 
+        // ── INTRO KẾT THÚC → BẬT HIỆU ỨNG FROZEN ────────────────────
+        vids.intro.addEventListener('ended', () => {
+            isIntroFinished = true;
+            vids.introAmbient.loop = true;
+            scenes.intro.style.cursor = "url('content/cursor/genshin_link.cur'), pointer";
+
+            // 1. Breathing glow quanh video
+            introWrapper.classList.add('frozen');
+
+            // 2. Vignette fade in
+            vignette.classList.add('visible');
+
+            // 3. Particles bay lên
+            particlesCanvas.classList.add('visible');
+            resizeCanvas();
+            initParticles();
+            requestAnimationFrame(animateParticles);
+        });
+
         let isDoorFinished = false;
         const doorWrapper = document.getElementById('door-wrapper');
 
-        // ── PARTICLES EFFECT CHO FREEZE FRAME ──
-        let particles = [];
-        let particlesRunning = false;
-        const particlesCount = 100;
-        
-        function initParticles() {
-            if (!particlesCanvas) return;
-            particlesCanvas.width = window.innerWidth;
-            particlesCanvas.height = window.innerHeight;
-            particles = [];
-            for (let i = 0; i < particlesCount; i++) {
-                particles.push({
-                    x: Math.random() * particlesCanvas.width,
-                    y: Math.random() * particlesCanvas.height,
-                    size: Math.random() * 2 + 1,
-                    speedX: Math.random() * 0.5 - 0.25,
-                    speedY: Math.random() * 0.5 - 0.25,
-                    opacity: Math.random() * 0.5 + 0.3
-                });
-            }
-        }
-        
-        function animateParticles() {
-            if (!particlesRunning || !ctx) return;
-            ctx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
-            
-            for (let i = 0; i < particles.length; i++) {
-                let p = particles[i];
-                p.x += p.speedX;
-                p.y += p.speedY;
-                
-                if (p.x < 0) p.x = particlesCanvas.width;
-                if (p.x > particlesCanvas.width) p.x = 0;
-                if (p.y < 0) p.y = particlesCanvas.height;
-                if (p.y > particlesCanvas.height) p.y = 0;
-                
-                ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            requestAnimationFrame(animateParticles);
-        }
-        
-        window.addEventListener('resize', () => {
-            if (particlesRunning && particlesCanvas) {
-                particlesCanvas.width = window.innerWidth;
-                particlesCanvas.height = window.innerHeight;
-            }
-        });
-        initParticles();
-
-        vids.intro.addEventListener('ended', () => {
-             isIntroFinished = true;
-             vids.introAmbient.loop = true;
-             scenes.intro.style.cursor = "url('content/cursor/genshin_link.cur'), pointer";
-             introWrapper.classList.add('frozen');
-             vignette.classList.add('visible');
-             particlesCanvas.classList.add('visible');
-             particlesRunning = true;
-             requestAnimationFrame(animateParticles);
-             
-             const introPrompt = document.getElementById('intro-prompt');
-             if (introPrompt) introPrompt.style.opacity = '1';
-        });
-
-        // ── CLICK -> CHUYỂN SANG CỬA ──
+        // ── CLICK → CHUYỂN SANG CỬA ───────────────────────────────────
         scenes.intro.addEventListener('click', () => {
             if (!isIntroFinished) return;
 
@@ -2783,37 +2694,137 @@
             audios.door.play();
         });
 
-        // ── VIDEO CỬA KẾT THÚC -> FLASH TRẮNG VÀO MAIN LUÔN ──
+        // ── VIDEO CỬA KẾT THÚC → TỰ ĐỘNG CHUYỂN SANG WEB CHÍNH ────────────
         vids.door.addEventListener('ended', () => {
-            isDoorFinished = true;
-            vids.doorAmbient.loop = true;
-            
             // Tắt hiệu ứng
             particlesRunning = false;
             vignette.classList.remove('visible');
             particlesCanvas.classList.remove('visible');
-            if (doorWrapper) doorWrapper.classList.remove('frozen');
+            doorWrapper.classList.remove('frozen');
 
             whiteFlash.classList.add('active');
 
             setTimeout(() => {
                 switchScene(scenes.door, scenes.main);
-                
-                vids.door.pause();
-                vids.doorAmbient.pause();
-                audios.door.pause();
-                
-                audios.bg.play().then(() => { 
-                    iconPlay.style.display = 'none'; 
-                    iconPause.style.display = 'block'; 
-                }).catch(() => {});
 
-                setTimeout(() => {
-                    whiteFlash.classList.remove('active');
-                }, 800);
-            }, 800);
+                // ── VIDEO LOOP: nhiều cơ chế để đảm bảo chạy mãi ──
+                const mainVid = document.getElementById('main-bg-vid');
+
+                function ensureVideoPlaying(v) {
+                    // 1. loop attr
+                    v.loop = true;
+                    // 2. Khi ended thì play lại thủ công (backup cho loop)
+                    v.addEventListener('ended', () => v.play().catch(() => {}));
+                    // 3. Nếu bị pause bởi browser thì play lại
+                    v.addEventListener('pause', () => {
+                        if (!v.ended) v.play().catch(() => {});
+                    });
+                    // 4. Khi tab active trở lại
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden && v.paused) v.play().catch(() => {});
+                    });
+                    v.play().catch(() => {});
+                    // 5. Kiểm tra định kỳ mỗi 1.5s - bảo hiểm cuối cùng
+                    setInterval(() => {
+                        if (v.paused || v.ended) v.play().catch(() => {});
+                    }, 1500);
+                }
+
+                ensureVideoPlaying(mainVid);
+                document.querySelectorAll('#main-scene .ambient-bg video').forEach(v => ensureVideoPlaying(v));
+
+                // Phát nhạc nền web chính
+                // Phát nhạc nền web chính thông qua Music Player
+                loadAndPlayTrack(true);
+
+                setTimeout(() => whiteFlash.classList.remove('active'), 500);
+            }, 1500);
         });
 
+        // ── HELPER: FADE AUDIO ────────────────────────────────────────
+        function fadeAudio(audioEl, from, to, duration) {
+            audioEl.volume = from;
+            const steps = 60;
+            const interval = duration / steps;
+            const delta = (to - from) / steps;
+            let step = 0;
+            const timer = setInterval(() => {
+                step++;
+                audioEl.volume = Math.min(1, Math.max(0, from + delta * step));
+                if (step >= steps) clearInterval(timer);
+            }, interval);
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // PARTICLES SYSTEM - hạt bụi lấp lánh bay lên từ đáy video
+        // ─────────────────────────────────────────────────────────────
+        let particles = [];
+        let particlesRunning = false;
+
+        function resizeCanvas() {
+            particlesCanvas.width  = particlesCanvas.offsetWidth;
+            particlesCanvas.height = particlesCanvas.offsetHeight;
+        }
+
+        function initParticles() {
+            particlesRunning = true;
+            particles = [];
+            const count = 60;
+            for (let i = 0; i < count; i++) {
+                spawnParticle(true);
+            }
+        }
+
+        function spawnParticle(randomY = false) {
+            const w = particlesCanvas.width;
+            const h = particlesCanvas.height;
+            particles.push({
+                x:       Math.random() * w,
+                y:       randomY ? Math.random() * h : h + 4,
+                size:    Math.random() * 2.5 + 0.5,
+                speedY:  Math.random() * 0.6 + 0.2,
+                speedX:  (Math.random() - 0.5) * 0.4,
+                alpha:   Math.random() * 0.6 + 0.2,
+                // Màu pixel art: trắng hoặc xanh cyan nhẹ
+                hue:     Math.random() > 0.6 ? 185 : 0,
+                sat:     Math.random() > 0.6 ? 80 : 0,
+                twinkle: Math.random() * Math.PI * 2,
+            });
+        }
+
+        function animateParticles() {
+            if (!particlesRunning) { ctx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height); return; }
+            requestAnimationFrame(animateParticles);
+
+            ctx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.y -= p.speedY;
+                p.x += p.speedX;
+                p.twinkle += 0.05;
+                const alphaMod = p.alpha * (0.6 + 0.4 * Math.sin(p.twinkle));
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                if (p.sat > 0) {
+                    ctx.fillStyle = `hsla(${p.hue}, ${p.sat}%, 80%, ${alphaMod})`;
+                } else {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alphaMod})`;
+                }
+                ctx.fill();
+
+                // Xóa hạt đã bay ra ngoài, sinh hạt mới
+                if (p.y < -5) {
+                    particles.splice(i, 1);
+                    spawnParticle(false);
+                }
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // ═══════════════════════════════════════════════════════
         // SHARED FX CANVAS - click burst + mouse trail dùng chung 1 canvas
         // ═══════════════════════════════════════════════════════
         const fxCanvas = document.createElement('canvas');
