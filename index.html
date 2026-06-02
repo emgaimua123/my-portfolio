@@ -2547,7 +2547,7 @@
             }
         });
 
-        const btnToggleTracklist = document.getElementById('btn-tracklist-menu');
+        const btnToggleTracklist = document.getElementById('btn-toggle-tracklist');
         btnToggleTracklist.addEventListener('click', () => {
             tracklistContainer.classList.toggle('open');
             musicBackdrop.classList.toggle('active');
@@ -2663,53 +2663,34 @@
         });
 
         // ── AUTOPLAY ÂM THANH (hook vào video muted) ─────────────────
-                const startScreen = document.getElementById('start-screen');
+        const startScreen = document.getElementById('start-screen');
         startScreen.addEventListener('click', () => {
             startScreen.classList.add('hidden');
             vids.intro.play();
             vids.introAmbient.play();
             audios.intro.play().catch(() => {});
-            for (let p of mouseTrail) p.age -= 0.055;
-            mouseTrail = mouseTrail.filter(p => p.age > 0);
-            if (mouseTrail.length < 2) return;
+        });
 
-            for (let i = 0; i < mouseTrail.length - 1; i++) {
-                // t=0: điểm cũ nhất (đuôi xa) → t=1: điểm mới nhất (chính xác tại mũi cursor)
-                const t  = i / (mouseTrail.length - 1);
-                const p0 = mouseTrail[i];
-                const p1 = mouseTrail[i + 1];
+        // ── INTRO -> DOOR TRANSITION (Waiting for user click) ────────
+        vids.intro.addEventListener('ended', () => {
+            scenes.intro.style.cursor = 'pointer';
+            // Click to open door
+            scenes.intro.addEventListener('click', function onClick() {
+                scenes.intro.removeEventListener('click', onClick);
+                scenes.intro.style.cursor = 'default';
+                
+                switchScene(scenes.intro, scenes.door);
+                vids.door.play();
+                vids.doorAmbient.play();
+                audios.door.play().catch(() => {});
+            });
+        });
 
-                // Dùng đường cong hình chuông (bell curve):
-                // Mũi (t=1): bell ~ 0 → mỏng & trong suốt (cảm giác xuất phát TỪ ĐUÔI mũi)
-                // Giữa (t=0.6): bell ~ 1 → to nhất, sáng nhất (lõi lửa)
-                // Đuôi (t=0): bell = 0 → mỏng dần, mờ đi
-                const bell = Math.sin(Math.pow(t, 0.8) * Math.PI);
-
-                const w     = bell * 6 + 0.3;
-                const lig   = 40 + bell * 35;
-                const alpha = p0.age * (bell * 0.9 + 0.1);
-
-                fxCtx.beginPath();
-                fxCtx.moveTo(p0.x, p0.y);
-                fxCtx.lineTo(p1.x, p1.y);
-                fxCtx.strokeStyle = `hsla(168, 95%, ${lig}%, ${alpha})`;
-                fxCtx.lineWidth   = w;
-                fxCtx.lineCap     = 'round';
-                fxCtx.shadowBlur  = bell * 14;
-                fxCtx.shadowColor = 'hsl(168, 100%, 70%)';
-                fxCtx.stroke();
-                fxCtx.shadowBlur  = 0;
-            }
-        }
-
-        // ─── MAIN FX LOOP ──────────────────────────────────────────────
-        function fxLoop() {
-            requestAnimationFrame(fxLoop);
-            fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
-            updateMouseTrail();
-            updateClickBursts();
-        }
-        fxLoop();
+        // ── DOOR -> MAIN TRANSITION ──────────────────────────────────
+        vids.door.addEventListener('ended', () => {
+            switchScene(scenes.door, scenes.main);
+            audios.bg.play().catch(() => {});
+        });
 
         // ── INIT DANDELIONS ───────────────────────────────────
         function initDandelions() {
