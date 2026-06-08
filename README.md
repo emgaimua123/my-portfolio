@@ -20,8 +20,11 @@ This project aims to deliver a "wow" factor by combining cinematic video transit
 - `intro/`: Houses the heavy media files for the cinematic entry sequence (intro videos, door opening videos, and sound effects).
 - `music/`: Contains all the `.mp3` audio tracks utilized by the interactive Music Player.
 
-## 🚀 How to Run
+## 🚀 Live Demo & How to Run
 
+**🌍 Experience the live website here:** [https://emgaimua123.github.io/my-portfolio/](https://emgaimua123.github.io/my-portfolio/)
+
+Alternatively, to run the project locally:
 1. **Clone or Download** this repository to your local machine.
 2. **Open `index.html`** in any modern web browser (Chrome, Edge, Firefox, Safari).
 3. *(Optional but Recommended)*: Serve the directory using a local web server (like VS Code's "Live Server" extension) to prevent any strict browser security policies from blocking local media autoplay.
