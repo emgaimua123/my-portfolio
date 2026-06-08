@@ -1,4 +1,4 @@
-# Genshin Impact Themed Interactive Portfolio
+# my-portfolio
 
 An immersive, highly interactive personal portfolio website inspired by the aesthetics, user interface, and experience of the game **Genshin Impact**. 
 
